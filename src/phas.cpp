@@ -4,7 +4,7 @@
 using namespace std;
 
 extern Symbol cla; //pre sym
-extern vector<string> syms, buffer;
+extern vector<string> buffer;
 extern vector<Symbol> classes;
 extern bool is_end, setting;
 extern ofstream out;
@@ -355,7 +355,6 @@ void exp_loop(void (*func1)(), void (*func2)(), Symbol sym1, Symbol sym2, Symbol
         func2();
         next_sym();
         func1();
-
         peek_sym();
     }
 }
@@ -390,29 +389,12 @@ void MulExp() {
     print("MulExp");
 }
 //offset output
-void LOrExp_print() {
-    print("LOrExp");
-}
-
-void LAndExp_print() {
-    print("LAndExp");
-}
-
-void EqExp_print() {
-    print("EqExp");
-}
-
-void RelExp_print() {
-    print("RelExp");
-}
-
-void AddExp_print() {
-    print("AddExp");
-}
-
-void MulExp_print() {
-    print("MulExp");
-}
+void LOrExp_print() { print("LOrExp");}
+void LAndExp_print() {print("LAndExp");}
+void EqExp_print() {print("EqExp");}
+void RelExp_print() {print("RelExp");}
+void AddExp_print() {print("AddExp");}
+void MulExp_print() {print("MulExp");}
 //simple
 void Exp() {
     AddExp();
@@ -426,7 +408,6 @@ void Cond() {
 
 void FormatString() {
     next_not_error(STRCON);
-//    print("FormatString");
 }
 
 void UnaryOp() {
@@ -441,17 +422,14 @@ void Number() {
 
 void IntConst() {
     next_not_error(INTCON);
-//    print("IntConst");
 }
 
 void BType() {
     next_not_error(INTTK);
-//    print("BType");
 }
 
 void Ident() {//terminal
     next_not_error(IDENFR);
-//    print("Ident");
 }
 
 void ConstExp() {

@@ -66,7 +66,6 @@ bool is_end = false;
 string sym, t_sym;
 Symbol cla, t_cla;
 vector<string> syms, buffer;
-string buf; //output buffer to prevent <> being delayed
 vector<Symbol> classes;   //when peeking, store symbols' contents and classes
 bool peeking = false;
 bool setting = false;
@@ -78,16 +77,12 @@ void save(string str, Symbol symbol) {
     if (peeking) {
         syms.push_back(str);
         classes.push_back(symbol);
-//        cout << "peeking: " + str << endl;
     } else if (setting) {
         sym = str; cla = symbol;
         buffer.push_back(get_sym[symbol] + ' ' + str);
-//        buf = get_sym[symbol] + ' ' + str;
     } else {
         sym = str; cla = symbol;
         out << get_sym[symbol] + ' ' + str << endl;
-//        buf = get_sym[symbol] + ' ' + str;
-        cout << get_sym[symbol] + ' ' + str << endl;
     }
 }
 
@@ -127,7 +122,6 @@ void revert() {//for recall: restore things without outputting
     setting = false;
     buffer = {};
     line_no=t_line_no; ch_no=t_ch_no; word_no=t_word_no; sym=t_sym; cla=t_cla;
-//    out << line_no << " "<< ch_no << "revert" << endl;
     line = lines[line_no]; ch = line[ch_no];
 }
 
