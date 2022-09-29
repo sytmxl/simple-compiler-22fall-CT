@@ -1,5 +1,5 @@
-#ifndef SYMBOL_H_
-#define SYMBOL_H_
+#ifndef CT_SYM_H
+#define CT_SYM_H
 #include <string>
 #include <iostream>
 #include "fstream"
@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include "map"
+#include "vector"
 
 using namespace std;
 
@@ -26,65 +27,18 @@ enum Symbol {
     ASSIGN, SEMICN, COMMA,
     LPARENT, RPARENT, LBRACK, RBRACK, LBRACE, RBRACE,
 };
-string get_sym[] = {
-    "DEFAULT",
-    "IDENFR",
-    "INTCON","STRCON",
-    "MAINTK",
-    "CONSTTK","INTTK",
-    "BREAKTK","CONTINUETK",
-    "IFTK","ELSETK",
-    "WHILETK","GETINTTK","PRINTFTK","RETURNTK",
-    "NOT", "AND", "OR", "PLUS", "MINU",
-    "VOIDTK",
-    "MULT", "DIV", "MOD",
-    "LSS", "LEQ", "GRE", "GEQ", "EQL", "NEQ",
-    "ASSIGN", "SEMICN", "COMMA",
-    "LPARENT", "RPARENT", "LBRACK", "RBRACK", "LBRACE", "RBRACE",
-};
-
-map<string, Symbol> to_sym{
-    {"main", MAINTK},
-    {"const", CONSTTK},
-    {"int", INTTK},
-    {"break", BREAKTK},
-    {"continue", CONTINUETK},
-    {"if", IFTK},
-    {"else", ELSETK},
-    {"!", NOT},{"&&", AND},{"||", OR},
-    {"while", WHILETK},
-    {"getint", GETINTTK},
-    {"printf", PRINTFTK},
-    {"return", RETURNTK},
-    {"+", PLUS},
-    {"-", MINU},
-    {"void", VOIDTK},
-    {"*", MULT},
-    {"/", DIV},
-    {"%", MOD},
-    {"<", LSS},
-    {"<=", LEQ},
-    {">", GRE},
-    {">=", GEQ},
-    {"==", EQL},
-    {"!=", NEQ},
-    {"=", ASSIGN},
-    {";", SEMICN},
-    {",", COMMA},
-    {"(", LPARENT},
-    {")", RPARENT},
-    {"[", LBRACK},
-    {"]", RBRACK},
-    {"{", LBRACE},
-    {"}", RBRACE},
-};
 
 void next_ch();
-void read_sym();
+void next_sym();
 void read_dig();
 void read_str();
 void read_id();
 void read_other();
 void save(string str, Symbol symbol=DEFAULT);
 void read_note();
-#endif // SYMBOL_H_
+void init_sym();
+void peek_sym(int num=1);
+void set(bool flush_only=false);
+void revert();
+void end();
+#endif // CT_SYM_H

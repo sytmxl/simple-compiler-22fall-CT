@@ -1,27 +1,149 @@
 #include "sym.h"
+using namespace std;
+
+string get_sym[] = {
+        "DEFAULT",
+        "IDENFR",
+        "INTCON","STRCON",
+        "MAINTK",
+        "CONSTTK","INTTK",
+        "BREAKTK","CONTINUETK",
+        "IFTK","ELSETK",
+        "WHILETK","GETINTTK","PRINTFTK","RETURNTK",
+        "NOT", "AND", "OR", "PLUS", "MINU",
+        "VOIDTK",
+        "MULT", "DIV", "MOD",
+        "LSS", "LEQ", "GRE", "GEQ", "EQL", "NEQ",
+        "ASSIGN", "SEMICN", "COMMA",
+        "LPARENT", "RPARENT", "LBRACK", "RBRACK", "LBRACE", "RBRACE",
+};
+
+map<string, Symbol> to_sym{
+        {"main", MAINTK},
+        {"const", CONSTTK},
+        {"int", INTTK},
+        {"break", BREAKTK},
+        {"continue", CONTINUETK},
+        {"if", IFTK},
+        {"else", ELSETK},
+        {"!", NOT},{"&&", AND},{"||", OR},
+        {"while", WHILETK},
+        {"getint", GETINTTK},
+        {"printf", PRINTFTK},
+        {"return", RETURNTK},
+        {"+", PLUS},
+        {"-", MINU},
+        {"void", VOIDTK},
+        {"*", MULT},
+        {"/", DIV},
+        {"%", MOD},
+        {"<", LSS},
+        {"<=", LEQ},
+        {">", GRE},
+        {">=", GEQ},
+        {"==", EQL},
+        {"!=", NEQ},
+        {"=", ASSIGN},
+        {";", SEMICN},
+        {",", COMMA},
+        {"(", LPARENT},
+        {")", RPARENT},
+        {"[", LBRACK},
+        {"]", RBRACK},
+        {"{", LBRACE},
+        {"}", RBRACE},
+};
 
 ifstream in("testfile.txt");
 ofstream out("output.txt");
 int line_no = 0;
 int word_no = 0; //position of word's first ch
 int ch_no = 0; //position of pre ch
-string line, store;
+vector<string> lines;
+string line;
 char ch = ' ';
 bool is_end = false;
+string sym, t_sym;
+Symbol cla, t_cla;
+vector<string> syms, buffer;
+string buf; //output buffer to prevent <> being delayed
+vector<Symbol> classes;   //when peeking, store symbols' contents and classes
+bool peeking = false;
+bool setting = false;
+int t_line_no, t_ch_no, t_word_no;
 
-int main() {
-    while (!is_end) read_sym();
-    out << store;
-    in.close();out.close();
+void save(string str, Symbol symbol) {
+    if (symbol == DEFAULT) symbol = to_sym[str];
+    if (symbol == DEFAULT) return; //delete NUL at the end of file
+    if (peeking) {
+        syms.push_back(str);
+        classes.push_back(symbol);
+//        cout << "peeking: " + str << endl;
+    } else if (setting) {
+        sym = str; cla = symbol;
+        buffer.push_back(get_sym[symbol] + ' ' + str);
+//        buf = get_sym[symbol] + ' ' + str;
+    } else {
+        sym = str; cla = symbol;
+        out << get_sym[symbol] + ' ' + str << endl;
+//        buf = get_sym[symbol] + ' ' + str;
+        cout << get_sym[symbol] + ' ' + str << endl;
+    }
 }
 
-void read_sym() {
+void next_sym() {
+    if (lines.empty()) {
+        while (getline(in, line)) lines.push_back(line);
+        line = lines[0];
+        ch = line[0];
+    }
     while ((ch == '\0' ||isspace(ch)) && !is_end) next_ch();
     word_no = ch_no;
     if (isdigit(ch)) read_dig();
     else if (isalpha(ch) || ch == '_') read_id();
     else read_other();
-};
+}
+//switch mode, save data, clear vector, read syms, restore data, switch mode
+void peek_sym(int num) {
+    peeking = true;
+    int t_line_no=line_no, t_ch_no=ch_no, t_word_no=word_no;
+    syms.clear(); classes.clear();
+    for(int i=0; i < num && !is_end; i++) {
+        next_sym();
+    }
+    line_no=t_line_no; ch_no=t_ch_no; word_no=t_word_no;
+    line = lines[line_no]; ch = line[ch_no];
+    peeking = false;
+}
+
+void set(bool flush_only) {//for recall: store things
+    setting = !flush_only;
+    for (auto &i : buffer) out << i << endl;
+    buffer = {};
+    t_line_no=line_no; t_ch_no=ch_no; t_word_no=word_no; t_sym=sym, t_cla=cla;
+}
+
+void revert() {//for recall: restore things without outputting
+    setting = false;
+    buffer = {};
+    line_no=t_line_no; ch_no=t_ch_no; word_no=t_word_no; sym=t_sym; cla=t_cla;
+//    out << line_no << " "<< ch_no << "revert" << endl;
+    line = lines[line_no]; ch = line[ch_no];
+}
+
+void next_ch() {
+    if (ch_no == line.size()) {
+        if (line_no >= lines.size()) {
+            is_end = true;
+        } else {
+            line = lines[++line_no];
+            ch_no = 0; word_no = 0;
+            ch = line[0];
+        }
+    } else {
+        ch = line[++ch_no];
+    }
+}
 
 void read_dig() {
     string str;
@@ -44,7 +166,7 @@ void read_str() {
 
 void read_id() {
     string str;
-    while (isalnum(ch)) {
+    while (isalnum(ch) || ch == '_') {
         str.push_back(ch);
         next_ch();
     }
@@ -115,9 +237,8 @@ void read_other() {
 
 void read_note() {
     if (ch == '/') {
-        getline(in, line);
-        line_no++;
-        ch_no = 0;
+        line = lines[++line_no];
+        ch_no = 0;word_no=0;
         ch = line[0];
     } else if (ch == '*') {
         bool note = true;
@@ -132,24 +253,7 @@ void read_note() {
             }
         }
     }
+    next_sym();
 }
 
-void save(string str, Symbol sym) {
-    if (sym == DEFAULT) sym = to_sym[str];
-    if (sym == DEFAULT) return; //delete NUL at the end of file
-    store.append(get_sym[sym] + ' ' + str + '\n');
-}
 
-void next_ch() {
-    if (ch_no == line.size()) {
-        if (!getline(in, line)) {
-            is_end = true;
-        } else {
-            line_no++;
-            ch_no = 0;
-            ch = line[0];
-        }
-    } else {
-        ch = line[++ch_no];
-    }
-}
