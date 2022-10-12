@@ -1,3 +1,7 @@
-//
-// Created by mxl syt on 2022/9/25.
-//
+#include "sym.h"
+#include "phas.h"
+
+int main() {
+    CompUnit();
+    set();
+}

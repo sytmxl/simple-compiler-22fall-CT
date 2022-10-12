@@ -1,35 +1,63 @@
-#include <sym.h>
+#include "sym.h"
 #include "phas.h"
+#include "err.h"
 
-using namespace std;
+int outside_str=0;//count exp number out of format string
 
-extern Symbol cla; //pre sym
-extern vector<string> buffer;
-extern vector<Symbol> classes;
-extern bool is_end, setting;
-extern ofstream out;
+void next_not_error(char errn, Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
+void Decl();
+void FuncDef();
+void MainFuncDef();
+void ConstDecl();
+void VarDecl();
+void BType();
+void ConstDef();
+void Ident();
+void ConstExp();
+void ConstInitVal();
+void VarDef();
+void InitVal();
+void FuncType();
+void FuncFParams();
+void Block();
+void FuncFParam();
+void BlockItem();
+void Stmt();
+void LVal();
+void Exp();
+void Cond();
+void FormatString();
+void UnaryOp();
+void Number();
+void IntConst();
+void FuncRParams();
+void AddExp();
+void MulExp();
+void UnaryExp();
+void PrimaryExp();
+void LAndExp();
+void EqExp();
+void RelExp();
+void LOrExp();
+void exp_loop(void (*func1)(), void (*func2)(), Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
+void print(string str);
 
-int main() {
-    CompUnit();
-    set();
-}
-
-void error() {
-    cout << "###########ERROR###########" << endl;
-}
+void AddExp_print();
+void MulExp_print();
+void LAndExp_print();
+void EqExp_print();
+void RelExp_print();
+void LOrExp_print();
 
 void print(string str) {
     if (setting) buffer.push_back("<" + str + ">");
     else out << "<" + str + ">" << endl;
 }
 
-void if_not_error(Symbol sym1, Symbol sym2, Symbol sym3, Symbol sym4) {
-    if (cla != sym1 && cla != sym2 && cla != sym3 && cla != sym4) error();
-}
-
-void next_not_error(Symbol sym1, Symbol sym2, Symbol sym3, Symbol sym4) {
-    next_sym();
-    if (cla != sym1 && cla != sym2 && cla != sym3 && cla != sym4) error();
+void next_not_error(char errn, Symbol sym1, Symbol sym2, Symbol sym3, Symbol sym4) {
+    peek_sym();
+    if (classes[0] != sym1 && classes[0] != sym2 && classes[0] != sym3 && classes[0] != sym4) error(errn);
+    else next_sym();
 }
 
 void CompUnit() {   //from last to last(to prevent read one sym ahead), using peek to keep balance
@@ -51,7 +79,6 @@ void Decl() {
     if (classes[0] == CONSTTK) ConstDecl();
     else if (classes[0] == INTTK) VarDecl();
     else error();
-//    print("Decl");
 }
 
 void FuncDef() {
@@ -60,7 +87,7 @@ void FuncDef() {
     next_not_error(LPARENT);
     peek_sym();
     if (classes[0] != RPARENT) FuncFParams();
-    next_not_error(RPARENT);
+    next_not_error('j', RPARENT);
     Block();
     print("FuncDef");
 }
@@ -74,7 +101,7 @@ void MainFuncDef() {
     next_not_error(INTTK);
     next_not_error(MAINTK);
     next_not_error(LPARENT);
-    next_not_error(RPARENT);
+    next_not_error('j', RPARENT);
     Block();
     print("MainFuncDef");
 }
@@ -89,7 +116,7 @@ void ConstDecl() {
         ConstDef();
         peek_sym();
     }
-    next_not_error(SEMICN);
+    next_not_error('i',SEMICN);
     print("ConstDecl");
 }
 
@@ -99,7 +126,7 @@ void ConstDef() {
     while (classes[0] == LBRACK) {
         next_sym();//at [
         ConstExp();
-        next_not_error(RBRACK);
+        next_not_error('k', RBRACK);
         peek_sym();
     }
     peek_sym();
@@ -119,7 +146,7 @@ void VarDecl() {
         VarDef();
         peek_sym();
     }
-    next_not_error(SEMICN);
+    next_not_error('i', SEMICN);
     print("VarDecl");
 }
 
@@ -129,7 +156,7 @@ void VarDef() {
     while (classes[0] == LBRACK) {
         next_sym();//at [
         ConstExp();
-        next_not_error(RBRACK);
+        next_not_error('k', RBRACK);
         peek_sym();
     }
     peek_sym();
@@ -195,12 +222,12 @@ void FuncFParam() {
     peek_sym();
     if (classes[0] == LBRACK) { //'[' ']' { '[' ConstExp ']' }
         next_sym();//at [
-        next_not_error(RBRACK);
+        next_not_error('k', RBRACK);
         peek_sym();
         while (classes[0] == LBRACK) {
             next_sym();
             ConstExp();
-            next_not_error(RBRACK);
+            next_not_error('k', RBRACK);
             peek_sym();
         }
     }
@@ -222,7 +249,6 @@ void BlockItem() {
     peek_sym();
     if (classes[0] == CONSTTK || classes[0] == INTTK) Decl();
     else Stmt();
-//    out << "<BlockItem>" <<  endl;
 }
 
 void Stmt() {
@@ -234,18 +260,18 @@ void Stmt() {
         if (cla != ASSIGN) { //Exp';'
             revert();
             Exp();
-            next_not_error(SEMICN);
+            next_not_error('i', SEMICN);
         } else {
             set(true);
             peek_sym();//at =
             if (classes[0] == GETINTTK) { //LVal'='@'getint''('')'';'
                 next_sym();//at getint
                 next_not_error(LPARENT);
-                next_not_error(RPARENT);
-                next_not_error(SEMICN);
+                next_not_error('j', RPARENT);
+                next_not_error('i', SEMICN);
             } else {    //LVal '='@ Exp';'
                 Exp();
-                next_not_error(SEMICN);
+                next_not_error('i', SEMICN);
             }
         }
     } else {
@@ -256,7 +282,7 @@ void Stmt() {
             next_sym();
             next_not_error(LPARENT);
             Cond();
-            next_not_error(RPARENT);
+            next_not_error('j', RPARENT);
             Stmt();
             peek_sym();
             if (classes[0] == ELSETK) {
@@ -267,31 +293,34 @@ void Stmt() {
             next_sym();//at while
             next_not_error(LPARENT);
             Cond();
-            next_not_error(RPARENT);
+            next_not_error('j', RPARENT);
             Stmt();
         } else if (classes[0] == BREAKTK) {   //'break'';'
             next_sym();
-            next_not_error(SEMICN);
+            next_not_error('i', SEMICN);
         } else if (classes[0] == RETURNTK) {   //'return'[Exp]';'
             next_sym();//at return
             peek_sym();
             if (classes[0] != SEMICN) Exp();
-            next_not_error(SEMICN);
+            next_not_error('i', SEMICN);
         } else if (classes[0] == PRINTFTK) {   //'printf''('FormatString{','Exp}')'';'
             next_sym();
             next_not_error(LPARENT);
             FormatString();
             peek_sym();
+            outside_str=0;
             while (classes[0] == COMMA) {
                 next_sym();//at ,
                 Exp();
+                outside_str++;
                 peek_sym();
             }
-            next_not_error(RPARENT);
-            next_not_error(SEMICN);
+            if (inside_str != outside_str) error('l');
+            next_not_error('j', RPARENT);
+            next_not_error('i', SEMICN);
         } else if (classes[0] == CONTINUETK) {   //'continue'';'
             next_sym();
-            next_not_error(SEMICN);
+            next_not_error('i', SEMICN);
         } else if (classes[0] == LBRACE) Block();
         else error();
     }
@@ -304,7 +333,7 @@ void LVal() {//Ident{'['Exp']'}
     while (classes[0] == LBRACK) {
         next_sym();
         Exp();
-        next_not_error(RBRACK);
+        next_not_error('k', RBRACK);
         peek_sym();
     }
     print("LVal");
@@ -328,7 +357,7 @@ void UnaryExp() {
         next_sym();//at (
         peek_sym();
         if (classes[0] != RPARENT) FuncRParams();
-        next_not_error(RPARENT);
+        next_not_error('j', RPARENT);
     } else if (classes[0] == PLUS || classes[0] == MINU || classes[0] == NOT) {
         UnaryOp();
         UnaryExp();
@@ -342,7 +371,7 @@ void PrimaryExp() {
     else if (classes[0] == LPARENT) {
         next_sym();
         Exp();
-        next_not_error(RPARENT);
+        next_not_error('j', RPARENT);
     } else if (classes[0] == INTCON) Number();
     else error();
     print("PrimaryExp");
