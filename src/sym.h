@@ -20,9 +20,9 @@ enum Symbol {
 };
 
 extern Symbol cla; //pre sym
-extern vector<string> buffer;
+extern vector<string> buffer, err_buffer;
 extern vector<Symbol> classes;
-extern bool is_end, setting;
+extern bool is_end, setting, peeking;
 extern ofstream out, err;
 extern int line_no, inside_str;
 extern int inside_str;

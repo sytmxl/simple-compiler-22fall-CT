@@ -1,4 +1,5 @@
-#include <sym.h>
+#include "sym.h"
+#include "err.h"
 string get_sym[] = {
         "DEFAULT","IDENFR","INTCON","STRCON","MAINTK",
         "CONSTTK","INTTK","BREAKTK","CONTINUETK","IFTK","ELSETK",
@@ -34,7 +35,7 @@ char ch = ' ';
 bool is_end = false;
 string sym, t_sym;
 Symbol t_cla;
-vector<string> syms, buffer;
+vector<string> syms, buffer, err_buffer;
 bool peeking = false;
 bool setting = false;
 int t_line_no, t_ch_no, t_word_no;
@@ -127,11 +128,14 @@ void read_dig() {
 void read_str() {
     string str;
     inside_str = 0;
+    bool has_error = false;
     while (ch != '\"') {
         if (ch == '%') inside_str++;
+        if (!isalpha(ch) and ch != '%' and !isspace(ch)) has_error= true;
         str.push_back(ch);
         next_ch();
-    }
+    }//ch == "
+    if (has_error) error('a');
     next_ch();  //different form read_dig
     save("\""+str+"\"", STRCON);
 }
@@ -177,15 +181,11 @@ void read_other() {
             if (ch == '=') {
                 next_ch();
                 save("==");
-            } else {
-                save("=");
-            }
+            } else save("=");
             break;
         case '/': next_ch();
             if (ch == '/' || ch == '*') read_note();
-            else {
-                save("/");
-            }
+            else save("/");
             break;
         case '|': next_ch();
             if (ch == '|') {
