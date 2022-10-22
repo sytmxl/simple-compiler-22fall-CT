@@ -35,7 +35,8 @@ char ch = ' ';
 bool is_end = false;
 string sym, t_sym;
 Symbol t_cla;
-vector<string> syms, buffer, err_buffer;
+vector<string> syms, buffer;
+map<int, char> err_buffer;
 bool peeking = false;
 bool setting = false;
 int t_line_no, t_ch_no, t_word_no;
@@ -73,6 +74,7 @@ void save(string str, Symbol symbol) {
     } else {
         sym = str; cla = symbol;
         out << get_sym[symbol] + ' ' + str << endl;
+//        cout << get_sym[symbol] + ' ' + str << endl;
     }
 }
 //switch mode, save data, clear vector, read syms, restore data, switch mode
@@ -92,12 +94,15 @@ void set(bool flush_only) {//for recall: store things
     setting = !flush_only;
     for (auto &i : buffer) out << i << endl;
     buffer = {};
+    errors.insert(err_buffer.begin(),err_buffer.end());
+    err_buffer.clear();
     t_line_no=line_no; t_ch_no=ch_no; t_word_no=word_no; t_sym=sym, t_cla=cla;
 }
 
 void revert() {//for recall: restore things without outputting
     setting = false;
     buffer = {};
+    err_buffer.clear();
     line_no=t_line_no; ch_no=t_ch_no; word_no=t_word_no; sym=t_sym; cla=t_cla;
     line = lines[line_no]; ch = line[ch_no];
 }
@@ -130,8 +135,18 @@ void read_str() {
     inside_str = 0;
     bool has_error = false;
     while (ch != '\"') {
-        if (ch == '%') inside_str++;
-        if (!isalpha(ch) and ch != '%' and !isspace(ch)) has_error= true;
+        if (ch == 32 or ch == 33 or (ch >= 40 and ch <= 126)) {//'\'=92
+            if (ch == '\\') {
+                str.push_back(ch);
+                next_ch();
+                if (ch != 'n') has_error = true;//only \n
+            }
+        } else if (ch == '%') {//'%'=37
+            str.push_back(ch);
+            next_ch();
+            if (ch != 'd') has_error = true;//only %d
+            else inside_str++;
+        } else has_error = true;
         str.push_back(ch);
         next_ch();
     }//ch == "

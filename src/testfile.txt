@@ -1,20 +1,45 @@
-const int const1 = 1, const2 = -100;
-int change1;
-int gets1(int var1,int var2){
-   const1 = 999;
-   change1 = var1 + var2          return (change1);
+const x;
+void a(int a[], int ab, int ac) {
+    int a;
+    int ab;
+    int d;
+    int ok;
+    return a;
 }
+int b() {}
 int main(){
-;
-1+1;
-   change1 = 10;
-   printf("Hello World%d %d", a);
-   return 0;
+
+    x=getint();
+    x=2;
+    int c,b,d;
+    int ar[2];
+    //a(a(ar[2], b, d),a(ar[2], b, d),d);
+    //a(c,b);
+    //a(c,b,d,d);
+    a(ar[2], b, d);
    while(1) {
-    while(1){
-    break;
-    }
-    break;
+        int b;
+        while(1){
+            int a;
+            int b;
+            int ok;
+            break;
+        }
+        while(1){
+            int ok;
+            break;
+        }
+        break;
    }
+   int ok;
    break;
-}
+   return
+   a(
+    a(
+        d,b,
+        c),
+        a(
+             d,b,
+             c),
+             c);
+   }
