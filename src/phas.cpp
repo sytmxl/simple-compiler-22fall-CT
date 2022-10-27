@@ -219,8 +219,8 @@ void ConstInitVal() {//almost same as InitVal
                 ConstInitVal();
                 peek_sym();
             }
-            next_not_error(RBRACE);
         }
+        next_not_error(RBRACE);
     } else ConstExp();
     print("ConstInitVal");
 }
@@ -238,8 +238,8 @@ void InitVal() {//almost same as ConstInitVal
                 InitVal();
                 peek_sym();
             }
-            next_not_error(RBRACE);
         }
+        next_not_error(RBRACE);
     } else Exp();
     print("InitVal");
 }
@@ -386,10 +386,10 @@ int Stmt() {
             if (loop_depth<=0) error('m');
             next_not_error(SEMICN);
         } else if (classes[0] == LBRACE) Block();
-        else if (classes[0] == LPARENT or classes[0] == INTCON){
+        else {//too much conditions, no error processing here so...
             Exp();
             next_not_error(SEMICN);
-        } else error();
+        }
     }
     print("Stmt");
     return ret;

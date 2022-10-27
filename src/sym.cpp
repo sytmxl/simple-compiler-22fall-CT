@@ -235,17 +235,12 @@ void read_note() {
         ch_no = 0;word_no=0;
         ch = line[0];
     } else if (ch == '*') {
-        bool note = true;
-        while (note && !is_end) {
+        char pre_ch;
+        while (!is_end and !(pre_ch == '*' and ch == '/')) {
+            pre_ch = ch;
             next_ch();
-            if (ch == '*') {
-                next_ch();
-                if (ch == '/') {
-                    note = false;
-                    next_ch();
-                }
-            }
         }
+        next_ch();
     }
     next_sym();
 }
