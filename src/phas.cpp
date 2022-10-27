@@ -7,6 +7,7 @@ int loop_depth=0;
 int return_line_no=-1, printf_line_no=-1;
 vector<int> func_line_nos;
 SymEntry g_entry;
+bool defining = false;
 
 void next_not_error(Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
 void Decl();
@@ -90,27 +91,26 @@ void Decl() {
 }
 
 void FuncDef() {
+    defining = true;
     FuncType();
     DType dtype = cla == INTTK ? D_INT : D_VOID;
-    next_not_error(IDENFR);
+    Ident();
+    defining = false;
     if (search_tab(sym).iType != I_NULL) error('b');
     string name = sym;
     next_not_error(LPARENT);
     peek_sym();
-    bool pop= false;
     vector<int> param;
-    if (classes[0] != RPARENT) {
-        new_tab(true);
+    new_tab(true);
+    if (classes[0] != RPARENT)
         param = FuncFParams();
-        pop = true;
-    }
     next_not_error(RPARENT);
+    SymEntry entry(I_FUNC, 0, dtype, param);
+    insert_tab(name, entry, preTab->parent);//insert to last tab(root tab)
     int ret = Block();//-1:no return or 'return;';  >=0: dim of return
     if (dtype == D_VOID and ret >= 0) error('f', return_line_no);//report line_no of last return
     if (dtype == D_INT and ret == -1) error('g');
-    if (pop) pop_tab();
-    SymEntry entry = {.iType=I_FUNC, .dType=dtype, .param=param};
-    insert_tab(name, entry);
+    pop_tab();
     print("FuncDef");
 }
 
@@ -124,7 +124,8 @@ void MainFuncDef() {
     next_not_error(MAINTK);
     next_not_error(LPARENT);
     next_not_error(RPARENT);
-    Block();
+    int ret = Block();//-1:no return or 'return;';  >=0: dim of return
+    if (ret == -1) error('g');
     print("MainFuncDef");
 }
 
@@ -143,7 +144,9 @@ void ConstDecl() {
 }
 
 void ConstDef() {
+    defining = true;
     Ident();
+    defining = false;
     if (search_tab(sym).iType != I_NULL) error('b');
     string name = sym;
     int dim=0;
@@ -160,7 +163,7 @@ void ConstDef() {
         next_sym();//at =
         ConstInitVal();
     }
-    SymEntry entry = {.iType=I_CONST, .dim=dim};
+    SymEntry entry(I_CONST, dim);
     insert_tab(name, entry);
     print("ConstDef");
 }
@@ -179,7 +182,9 @@ void VarDecl() {
 }
 
 void VarDef() {
+    defining = true;
     Ident();
+    defining = false;
     if (search_tab(sym).iType != I_NULL) error('b');
     string name = sym;
     int dim=0;
@@ -196,7 +201,7 @@ void VarDef() {
         next_sym();//at =
         InitVal();
     }
-    SymEntry entry = {.iType=I_VAR, .dim=dim};
+    SymEntry entry(I_VAR, dim);
     insert_tab(name, entry);
     print("VarDef");
 }
@@ -255,6 +260,7 @@ vector<int> FuncFParams() {
 int FuncFParam() {
     BType();
     Ident();
+    if (search_tab(sym).iType != I_NULL) error('b');
     peek_sym();
     int dim = 0;
     string name = sym;
@@ -271,7 +277,7 @@ int FuncFParam() {
             peek_sym();
         }
     }
-    SymEntry entry = {.iType=I_VAR, .dim=dim};
+    SymEntry entry(I_VAR, dim);
     insert_tab(name, entry);
     print("FuncFParam");
     return dim;
@@ -316,7 +322,7 @@ int Stmt() {
         } else {
             set(true);
             peek_sym();//at =
-            if (classes[0] == GETINTTK) { //LVal'=''getint''('')'';'
+            if (classes[0] == GETINTTK) { //LVal'='@'getint''('')'';'
                 next_sym();//at getint
                 next_not_error(LPARENT);
                 next_not_error(RPARENT);
@@ -393,7 +399,8 @@ int LVal() {//Ident{'['Exp']'}
     Ident();
     int dim=0;
     g_entry = search_tab(sym);
-    if (g_entry.iType==I_NULL) error('c');
+    if(!defining) if (g_entry.iType==I_NULL) error('c');
+
     peek_sym();
     while (classes[0] == LBRACK) {
         next_sym();
@@ -403,6 +410,8 @@ int LVal() {//Ident{'['Exp']'}
         peek_sym();
     }
     print("LVal");
+    //can't use const array in funcRparam
+    if (g_entry.iType==I_CONST and g_entry.dim > 0 and g_entry.dim - dim > 0) return 3;
     return g_entry.dim - dim;
 }
 
@@ -410,11 +419,9 @@ vector<int> FuncRParams() {
     vector<int> param;
     param.push_back(Exp());
     peek_sym();
-    int num=1;
     while (classes[0] == COMMA) {
         next_sym();
         param.push_back(Exp());
-        num++;
         peek_sym();
     }
     print("FuncRParams");
@@ -428,18 +435,24 @@ int UnaryExp() {
         next_sym();//at Ident
         func_line_nos.push_back(line_no);
         SymEntry entry = search_tab(sym);
-        if (entry.iType == I_NULL) error('c');
-        dim = entry.dType == D_VOID? -1 : 1;
+        if(!defining) if (entry.iType == I_NULL) {
+            error('c');
+            while (cla != RPARENT) next_sym();
+            return 3;
+        }
+        dim = entry.dType == D_VOID? 3 : 0;
         next_sym();//at (
         peek_sym();
-        if (classes[0] != RPARENT) {
+        if (classes[0] != RPARENT and classes[0] != SEMICN) {
             vector<int> param = FuncRParams();
             if (entry.param.size() != param.size()) error('d',func_line_nos.back());
-            for (int i=0; i < param.size(); i++)
-                if (param[i] != entry.param[i]) error('e', func_line_nos.back());
-        }
-        next_not_error(RPARENT);
+            else
+                for (int i=0; i < param.size(); i++)
+                    if (param[i] != entry.param[i]) error('e', func_line_nos.back());
+        } else //func();
+            if (!entry.param.empty()) error('d',func_line_nos.back());
         func_line_nos.pop_back();
+        next_not_error(RPARENT);
     } else if (classes[0] == PLUS || classes[0] == MINU || classes[0] == NOT) {
         UnaryOp();
         dim = UnaryExp();
@@ -470,12 +483,12 @@ int exp_loop(int (*func1)(), void (*func2)(), Symbol sym1, Symbol sym2, Symbol s
     while (classes[0] == sym1 || classes[0] == sym2 || classes[0] == sym3 || classes[0] == sym4) {
         func2();
         next_sym();
-        int ret = func1();
+        ret = func1();
         if (ret > dim) dim = ret;
         peek_sym();
     }
     func2();
-    return ret;
+    return dim;
 }
 //exp_loop
 int LOrExp() {

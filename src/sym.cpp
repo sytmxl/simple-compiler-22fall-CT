@@ -23,7 +23,7 @@ ofstream out("output.txt");
 Symbol cla;
 vector<Symbol> classes;   //when peeking, store symbols' contents and classes
 //for error
-int line_no = 0;
+int line_no = 1;
 int word_no = 0; //position of word's first ch
 int ch_no = 0; //position of pre ch
 ofstream err("error.txt");
@@ -51,8 +51,9 @@ void read_note();
 
 void next_sym() {
     if (lines.empty()) {
+        lines.push_back(" ");
         while (getline(in, line)) lines.push_back(line);
-        line = lines[0];
+        line = lines[1];
         ch = line[0];
     }
     while ((ch == '\0' ||isspace(ch)) && !is_end) next_ch();
@@ -60,6 +61,8 @@ void next_sym() {
     if (isdigit(ch)) read_dig();
     else if (isalpha(ch) || ch == '_') read_id();
     else read_other();
+
+    if (sym == "bp" and debug) break_point();
 }
 
 void save(string str, Symbol symbol) {
@@ -113,12 +116,14 @@ void next_ch() {
             is_end = true;
         } else {
             line = lines[++line_no];
+//            if (debug) cout << "line: "+line_no << endl;
             ch_no = 0; word_no = 0;
             ch = line[0];
         }
     } else {
         ch = line[++ch_no];
     }
+//    if (debug) cout << "ch: "<< ch_no << endl;
 }
 
 void read_dig() {
@@ -139,11 +144,13 @@ void read_str() {
             if (ch == '\\') {
                 str.push_back(ch);
                 next_ch();
+                if (ch == '\"') { has_error = true;break; }
                 if (ch != 'n') has_error = true;//only \n
             }
         } else if (ch == '%') {//'%'=37
             str.push_back(ch);
             next_ch();
+            if (ch == '\"') { has_error = true;break; }
             if (ch != 'd') has_error = true;//only %d
             else inside_str++;
         } else has_error = true;
