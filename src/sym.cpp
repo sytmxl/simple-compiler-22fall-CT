@@ -235,6 +235,7 @@ void read_note() {
         ch_no = 0;word_no=0;
         ch = line[0];
     } else if (ch == '*') {
+        next_ch();
         char pre_ch;
         while (!is_end and !(pre_ch == '*' and ch == '/')) {
             pre_ch = ch;
