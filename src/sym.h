@@ -28,6 +28,8 @@ extern ofstream out, err;
 extern int line_no, inside_str;
 extern int inside_str;
 extern string line, sym;
+extern map<string, Symbol> to_cla;
+extern string get_sym[];
 
 void next_sym();
 void peek_sym(int num=1);

@@ -1,13 +1,15 @@
 #ifndef CT_ERR_H
 #define CT_ERR_H
 #include "sym.h"
-
+//int uninit = -1365681;
 enum IType {
     I_NULL,
     I_DEFAULT,
     I_FUNC,
     I_VAR,//SymEntry.dim tells if is array and its dim
     I_CONST,
+    I_STR,
+    I_TEMP,
 };
 
 enum DType {
@@ -25,7 +27,10 @@ typedef struct SymEntry {
     IType iType=I_DEFAULT;
     int dim=0;
     DType dType=D_DEFAULT;//return value
-//    int addr=0;
+    int value = -1365681;
+    int addr = -1365681;
+    string reg="";
+    bool global= false;
 //    vector<Var> param;
     vector<int> param;//dim of parameters(as only int)
 
@@ -33,6 +38,8 @@ typedef struct SymEntry {
         : iType(iType1), dim(dim1), dType(dType1), param(param1) {}
     SymEntry(IType iType1, int dim1)
             : iType(iType1), dim(dim1){}
+    SymEntry(IType iType1, int dim1, int value1)
+            : iType(iType1), dim(dim1), value(value1){}
     SymEntry()= default;
     SymEntry(IType iType1): iType(iType1){};
 }SymEntry;
@@ -47,6 +54,7 @@ typedef struct Tab {
 extern map<int, char> errors;
 extern bool debug;
 extern Tab *preTab;
+extern vector<Tab*> tab_flow;
 
 void error(char errn='X', int line_number=line_no);
 void sym2error(Symbol sym);
@@ -54,7 +62,7 @@ void tab_init();
 void new_tab(bool local=false);
 void pop_tab();
 void insert_tab(const string &id, const SymEntry &entry, Tab *tab=preTab);
-SymEntry search_tab(string id);
+SymEntry* search_tab(string id);
 void print_tab();
 void print_error();
 void break_point();

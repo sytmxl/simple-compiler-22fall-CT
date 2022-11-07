@@ -141,20 +141,31 @@ void read_str() {
     bool has_error = false;
     while (ch != '\"') {
         if (ch == 32 or ch == 33 or (ch >= 40 and ch <= 126)) {//'\'=92
-            if (ch == '\\') {
-                str.push_back(ch);
+            if (ch == '\\') {//\?
                 next_ch();
-                if (ch == '\"') { has_error = true;break; }
-                if (ch != 'n') has_error = true;//only \n
-            }
-        } else if (ch == '%') {//'%'=37
-            str.push_back(ch);
+                if (ch == '\"') {
+                    str.push_back('\\');
+                    has_error = true;
+                    break;
+                }
+                if (ch != 'n') {//\n
+                    has_error = true;//only \n
+                    str.append("\\"+to_string(ch));
+                }
+                else str.append("'#'");//normal
+            } else str.push_back(ch);
+        } else if (ch == '%') {//'%'=37 %?
             next_ch();
-            if (ch == '\"') { has_error = true;break; }
-            if (ch != 'd') has_error = true;//only %d
-            else inside_str++;
+            if (ch == '\"') { str.push_back('%');has_error = true;break; }
+            if (ch != 'd') {
+                has_error = true;//not %d
+                str.append("%"+to_string(ch));
+            }
+            else {//%d
+                inside_str++;
+                str.append("'$'");
+            }
         } else has_error = true;
-        str.push_back(ch);
         next_ch();
     }//ch == "
     if (has_error) error('a');

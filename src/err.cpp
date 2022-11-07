@@ -1,4 +1,5 @@
 #include "err.h"
+#include "mips.h"
 #include <map>
 //TODO more info showed when error occurs
 //"int ok" trigger print_tab
@@ -8,6 +9,7 @@ bool line_protection = false;//if one line has one problem only?
 Tab *preTab=nullptr;
 int last_line=0;
 map<int, char> errors;
+vector<Tab*> tab_flow;
 
 void break_point();
 
@@ -22,26 +24,32 @@ void print_error() {
 void new_tab(bool local) {
     Tab *newTab = new Tab (preTab, local);
     preTab = newTab;
+    tab_flow.push_back(preTab);
+    add_quad(TAB);
 }
 
 void pop_tab() {
+//    print_quad();
+//    print_mips();
     preTab = preTab->parent;
+    tab_flow.push_back(preTab);
+    add_quad(TAB);
 }
 
-SymEntry search_tab(string id) {
+SymEntry* search_tab(string id) {
     Tab *pre = preTab;
     while (pre->parent != nullptr) {
-        if (pre->tab.count(id)) return pre->tab[id];
+        if (pre->tab.count(id)) return &pre->tab[id];
         pre = pre->parent;
     }
     //at last tab(root tab or local tab)
-    if (pre->tab.count(id)) return pre->tab[id];
-    SymEntry null(I_NULL);
-    return null;
+    if (pre->tab.count(id)) return &pre->tab[id];
+//    SymEntry null(I_NULL);
+    return new SymEntry(I_NULL);
 }
 
 void insert_tab(const string &id, const SymEntry &entry, Tab *tab) {
-    if (search_tab(id).iType==I_NULL) tab->tab[id] = entry;
+    if (search_tab(id)->iType==I_NULL) tab->tab[id] = entry;
 //    else error('b');
 }
 
@@ -82,6 +90,7 @@ void error(char errn, int line_number) {
 
 void break_point() {
     err << line << endl;
+    next_sym();
 }
 
 void sym2error(Symbol sym) {//error map for phasing
