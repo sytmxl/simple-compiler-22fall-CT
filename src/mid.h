@@ -8,7 +8,7 @@ enum Op {
     IN, OUT, STR,
     COMP, LABEL, J,
     BEQ, BNE, BZ, BNZ,
-    TAB, PUSH_STACK, POP_STACK,
+    TAB, PUSH_STACK, POP_STACK,PUSH_GP,POP_GP
 };
 
 typedef struct Quadruple {

@@ -39,17 +39,30 @@ void pop_tab() {
 SymEntry* search_tab(string id) {
     Tab *pre = preTab;
     while (pre->parent != nullptr) {
-        if (pre->tab.count(id)) return &pre->tab[id];
+        if (pre->tab.count(id)) {
+            if (mips_on) {
+                if (pre->tab[id].addr != uninit) return &pre->tab[id];
+            } else return &pre->tab[id];
+        }
         pre = pre->parent;
     }
     //at last tab(root tab or local tab)
-    if (pre->tab.count(id)) return &pre->tab[id];
+    if (pre->tab.count(id)) {
+        if (mips_on) {
+            if (pre->tab[id].addr != uninit) return &pre->tab[id];
+        } else return &pre->tab[id];
+    }
 //    SymEntry null(I_NULL);
     return new SymEntry(I_NULL);
 }
 
+SymEntry* search_pre_tab(string id) {
+    if (preTab->tab.count(id)) return &(preTab->tab[id]);
+    return new SymEntry(I_NULL);
+}
+
 void insert_tab(const string &id, const SymEntry &entry, Tab *tab) {
-    if (search_tab(id)->iType==I_NULL) tab->tab[id] = entry;
+    if (search_pre_tab(id)->iType==I_NULL) tab->tab[id] = entry;
 //    else error('b');
 }
 
@@ -90,7 +103,7 @@ void error(char errn, int line_number) {
 
 void break_point() {
     err << line << endl;
-    next_sym();
+//    next_sym();
 }
 
 void sym2error(Symbol sym) {//error map for phasing

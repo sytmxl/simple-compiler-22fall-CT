@@ -40,6 +40,8 @@ typedef struct SymEntry {
             : iType(iType1), dim(dim1){}
     SymEntry(IType iType1, int dim1, int value1)
             : iType(iType1), dim(dim1), value(value1){}
+    SymEntry(IType iType1, int dim1, int value1, int addr1)
+            : iType(iType1), dim(dim1), value(value1), addr(addr1){}
     SymEntry()= default;
     SymEntry(IType iType1): iType(iType1){};
 }SymEntry;
@@ -63,6 +65,7 @@ void new_tab(bool local=false);
 void pop_tab();
 void insert_tab(const string &id, const SymEntry &entry, Tab *tab=preTab);
 SymEntry* search_tab(string id);
+SymEntry* search_pre_tab(string id);
 void print_tab();
 void print_error();
 void break_point();

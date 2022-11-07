@@ -104,7 +104,7 @@ void FuncDef() {
     DType dtype = cla == INTTK ? D_INT : D_VOID;
     Ident();
     defining = false;
-    if (search_tab(sym)->iType != I_NULL) error('b');
+//    if (search_tab(sym)->iType != I_NULL) error('b');
     string name = sym;
     add_quad(FUNC, dtype == D_INT ? "int" : "void", name);
     next_not_error(LPARENT);
@@ -160,7 +160,7 @@ void ConstDef() {
     defining = true;
     Ident();
     defining = false;
-    if (search_tab(sym)->iType != I_NULL) error('b');
+//    if (search_tab(sym)->iType != I_NULL) error('b');
     string name = sym;
     int dim=0;
     peek_sym();
@@ -202,7 +202,7 @@ void VarDef() {
     defining = true;
     Ident();
     defining = false;
-    if (search_tab(sym)->iType != I_NULL) error('b');
+//    if (search_tab(sym)->iType != I_NULL) error('b');
     string name = sym;
     int dim=0;
     peek_sym();
@@ -285,7 +285,7 @@ vector<int> FuncFParams() {
 int FuncFParam() {
     BType();
     Ident();
-    if (search_tab(sym)->iType != I_NULL) error('b');
+//    if (search_tab(sym)->iType != I_NULL) error('b');
     peek_sym();
     int dim = 0;
     string name = sym;
@@ -320,7 +320,7 @@ int Block() {
         peek_sym();
     }
     next_not_error(RBRACE);
-    print_tab();//for view
+//    print_tab();//for view
     pop_tab();
     print("Block");
     return ret;
@@ -457,7 +457,7 @@ string LVal() {//Ident{'['Exp']'}
 //    int dim=0;
     string ret = sym;
     g_entry = search_tab(sym);
-    if(!defining) if (g_entry->iType==I_NULL) error('c');
+//    if(!defining) if (g_entry->iType==I_NULL) error('c');
 
     peek_sym();
     while (classes[0] == LBRACK) {
@@ -467,6 +467,7 @@ string LVal() {//Ident{'['Exp']'}
         next_not_error(RBRACK);
         peek_sym();
     }
+    if (cons) ret = to_string(to_int(ret));
     print("LVal");
     return ret;
     //can't use const array in funcRparam
@@ -477,13 +478,26 @@ string LVal() {//Ident{'['Exp']'}
 vector<int> FuncRParams() {
     vector<int> param;
 //    param.push_back(Exp());
-    add_quad(PUSH, Exp());
+    //add_quad(PUSH, Exp());
+    int i = 0;
+    Exp();
+//    add_quad(ASSI, "$s"+to_string(i), "$t1");
+    add_quad(PUSH_GP);
     peek_sym();
+    i++;
     while (classes[0] == COMMA) {
         next_sym();
 //        param.push_back(Exp());
-        add_quad(PUSH, Exp());
+        Exp();
+//        add_quad(ASSI, "$s"+to_string(i), "$t1");
+        i++;
+        add_quad(PUSH_GP);
         peek_sym();
+    }
+    for(int j =0;j<i;j++) {
+        add_quad(POP_GP);
+        add_quad(PUSH, "$t0");
+//        add_quad(PUSH, "$s"+to_string(j));
     }
     print("FuncRParams");
     return param;
@@ -524,14 +538,20 @@ string UnaryExp() {
         if (cons) {
             if (cla == MINU) ret= "-";
             ret += UnaryExp();
+            if (ret[0] == '-' and ret[1] == '-') {
+                string temp;
+                for (int i = 2; i < ret.size(); i++) temp += ret[i];
+                ret = temp;
+            }
         } else {
-            ret = new_temp_var();
-            add_quad(sym2op(cla), "0", UnaryExp(), ret);
+            if (cla == MINU) {
+                ret = new_temp_var();
+                add_quad(_SUB, "0", UnaryExp(), ret);
+            } else ret = UnaryExp();
         }
     } else ret = PrimaryExp();
     if (!cons) {
         add_quad(ASSI, "$t1", ret);
-
     }
     print("UnaryExp");
     return ret;
@@ -555,12 +575,13 @@ string PrimaryExp() {
 string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2, Symbol sym3, Symbol sym4) {
     vector<string> vars;
     string ret, temp;
-    Symbol op=DEFAULT;
+//    Symbol op=DEFAULT;
     int con = uninit;
     vector<Symbol> ops;
     temp = func();
     //add_quad(PUSH_STACK);
-    if (open_cal and cons and (is_digit(temp)!=uninit or search_tab(temp)->iType==I_CONST or global))
+    if (open_cal and cons )
+        //and (is_digit(temp)!=uninit or search_tab(temp)->iType==I_CONST or global)
         con = to_int(temp);
     else ret = temp;
     peek_sym();
@@ -568,16 +589,16 @@ string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2
         print_func();
         Symbol symbol = classes[0];//operator
         next_sym();
-        add_quad(PUSH_STACK);
+        if (!cons) add_quad(PUSH_GP);
         temp = func();
-        if (open_cal and cons and (is_digit(temp)!=uninit or search_tab(temp)->iType==I_CONST)) {
+        if (open_cal and cons ) {
             if (con == uninit) {//no con before
                 con = to_int(temp);
-                op = symbol;
+//                op = symbol;
             }//has con before
             else con = cal(symbol, to_string(con), temp);//const cal here
         } else {
-            add_quad(POP_STACK);
+            add_quad(POP_GP);
             add_quad(sym2op(symbol), "$t0", "$t1", "$t1");
             //add_quad(PUSH_STACK);
         }
@@ -661,7 +682,7 @@ void BType() {
 
 void Ident() {//terminal
     next_not_error(IDENFR);
-    if (sym.compare("ok") == 0) print_tab();
+//    if (sym.compare("ok") == 0) print_tab();
 }
 
 string ConstExp() {

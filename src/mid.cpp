@@ -12,7 +12,7 @@ Op sym2op(Symbol sym) {
         case MULT: return _MUL;
         case DIV: return _DIV;
         case MOD: return _MOD;
-        default: cout << "sym2op error" + get_sym[sym] << endl;return DEF;
+        default: return DEF;
     }
 }
 
@@ -45,7 +45,7 @@ string mid_out(Quadruple quad) {
         case GETRET:ret =  quad.x + " = RET"; break;
         case OUT:   ret =  "printf " + quad.x+"\n"; break;
         case STR:   ret =  "const str " + quad.x + " = \"" + quad.y + "\""; break;
-        case CALL:  ret =  "call " + quad.x; break;
+        case CALL:  ret =  "CALL " + quad.x; break;
         case J:     ret =  "J " + quad.x; break;
         case IN:    ret =  quad.x + " = getint()"; break;
         case BZ:    ret =  "bz " + quad.x + " " + quad.y+ " " + quad.z; break;
@@ -55,6 +55,8 @@ string mid_out(Quadruple quad) {
         case DEF:ret =  "DEF";break;
         case PUSH_STACK: ret = "push stack";break;
         case POP_STACK: ret = "pop stack";break;
+        case PUSH_GP: ret = "push gp";break;
+        case POP_GP: ret = "pop gp";break;
         default:    cout << "UNKNOWN";
     }
     return ret + "\n";
@@ -91,7 +93,7 @@ vector<string> split(const string& str, const string& delim) {
 string new_str(string value) {
     vector<Quadruple>::iterator ite = quads.begin();
     quads.insert(ite, 1, Quadruple(STR, "str"+to_string(str_no), value, ""));
-    insert_tab("str"+to_string(str_no), SymEntry(I_STR));
+    insert_tab("str"+to_string(str_no), SymEntry(I_STR, 1, 1, 1));
     return "str"+to_string(str_no++);
 }
 
