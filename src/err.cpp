@@ -36,11 +36,11 @@ void pop_tab() {
     add_quad(TAB);
 }
 
-SymEntry* search_tab(string id) {
+SymEntry* search_tab(string id, bool off) {
     Tab *pre = preTab;
     while (pre->parent != nullptr) {
         if (pre->tab.count(id)) {
-            if (mips_on) {
+            if (mips_on and !off) {
                 if (pre->tab[id].addr != uninit) return &pre->tab[id];
             } else return &pre->tab[id];
         }
@@ -48,7 +48,7 @@ SymEntry* search_tab(string id) {
     }
     //at last tab(root tab or local tab)
     if (pre->tab.count(id)) {
-        if (mips_on) {
+        if (mips_on and !off) {
             if (pre->tab[id].addr != uninit) return &pre->tab[id];
         } else return &pre->tab[id];
     }

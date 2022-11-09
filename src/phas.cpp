@@ -482,7 +482,7 @@ vector<int> FuncRParams() {
     int i = 0;
     Exp();
 //    add_quad(ASSI, "$s"+to_string(i), "$t1");
-    add_quad(PUSH_GP);
+    add_quad(PUSH_STACK);
     peek_sym();
     i++;
     while (classes[0] == COMMA) {
@@ -491,11 +491,11 @@ vector<int> FuncRParams() {
         Exp();
 //        add_quad(ASSI, "$s"+to_string(i), "$t1");
         i++;
-        add_quad(PUSH_GP);
+        add_quad(PUSH_STACK);
         peek_sym();
     }
     for(int j =0;j<i;j++) {
-        add_quad(POP_GP);
+        add_quad(POP_STACK);
         add_quad(PUSH, "$t0");
 //        add_quad(PUSH, "$s"+to_string(j));
     }
@@ -589,7 +589,7 @@ string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2
         print_func();
         Symbol symbol = classes[0];//operator
         next_sym();
-        if (!cons) add_quad(PUSH_GP);
+        if (!cons) add_quad(PUSH_STACK);
         temp = func();
         if (open_cal and cons ) {
             if (con == uninit) {//no con before
@@ -598,7 +598,7 @@ string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2
             }//has con before
             else con = cal(symbol, to_string(con), temp);//const cal here
         } else {
-            add_quad(POP_GP);
+            add_quad(POP_STACK);
             add_quad(sym2op(symbol), "$t0", "$t1", "$t1");
             //add_quad(PUSH_STACK);
         }
@@ -682,7 +682,7 @@ void BType() {
 
 void Ident() {//terminal
     next_not_error(IDENFR);
-//    if (sym.compare("ok") == 0) print_tab();
+    if (sym.compare("ok") == 0) print_tab();
 }
 
 string ConstExp() {

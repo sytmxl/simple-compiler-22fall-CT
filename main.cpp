@@ -48,29 +48,21 @@ int main() {
     mips.close();
     out.close();
 
-    printf("global: %d %d %d\n",ga,gb,gc);
-    publish();
-    readGa();
-    addGaGb(100);
-    printf("1: %d %d %d\n",ga,gb,gc);
-    int a = 200;
-    addGaGb(a);
-    printf("2: %d %d %d\n",ga,gb,gc);
-    int b = 300;
-    addGaGb((a+b)/2*(b-a)/100);
-    printf("3: %d %d %d\n",ga,gb,gc);
-    ga = sub(ga, gb);
-    gb = sub(gc, ga+29);
-    printf("4: %d %d %d\n",ga,gb,gc);
-    a = add(add(10,20), sub(100,10));
-    b = sub(add(ga,gc) + add(10,5)/3, sub(100,add(a,30)));
+
+
+
+    int a = add(add(10,20), sub(100,10));
+    int b = sub(add(ga,gc) + add(10,5)/3, sub(100,add(a,30)));
     printf("5: %d %d\n",a,b);
-    int aa = add(ga,gc);
-    int bb = add(10,5);
-    printf("5.5: %d %d\n",aa,bb);
-    aa = add(ga,gc) + add(10,5);
-    bb = sub(100,add(a,30));
-    printf("5.6: %d %d\n",aa,bb);
+    a = 1+sub(100,10);
+    b = add(ga,gc) + add(10,5)/3;
+    printf("%d %d\n",a,b);
+//    int aa = add(ga,gc);
+//    int bb = add(10,5);
+//    printf("5.5: %d %d\n",aa,bb);
+//    aa = add(ga,gc) + add(10,5);
+//    bb = sub(100,add(a,30));
+//    printf("5.6: %d %d\n",aa,bb);
     int t_1 = 928;
     int t1 = sum(294, -+-+-t_1, sub(a, 10), ga+gb, add(gc, 10), add(10,sub(t_1, 800)), sum(1,1,1,1,1,1,-1));
     printf("6: %d\n",t1);

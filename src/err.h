@@ -64,7 +64,7 @@ void tab_init();
 void new_tab(bool local=false);
 void pop_tab();
 void insert_tab(const string &id, const SymEntry &entry, Tab *tab=preTab);
-SymEntry* search_tab(string id);
+SymEntry* search_tab(string id, bool off = false);
 SymEntry* search_pre_tab(string id);
 void print_tab();
 void print_error();

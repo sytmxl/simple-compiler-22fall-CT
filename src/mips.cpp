@@ -10,18 +10,18 @@ int t_reg=0;
 int pre_tab=0;
 bool stack_prepare = true, not_first = false, done = false;
 int var_offset = 0, para_reg_no = 1, para_offset=0, push_reg_no = 1;
-int space_for_var = 4000;
+int space_for_var = 400;
 int max_para_reg = 0;
 bool mips_on = false;
 vector<string> ids;
 vector<int> addrs;
 vector<string> preserve_regs = {
-        "$sp", "$ra", "$fp",
+        "$fp", "$ra",
 //                                "$s0",
 //    "$s1", "$s2", "$s3",
 //                                "$s4", "$s5", "$s6", "$s7"
 };
-int base_offset = space_for_var + 4*preserve_regs.size()*2;
+int base_offset = space_for_var + 4*preserve_regs.size() + 4;
 
 void addi(const string& x, int num=4, string y="") {
     if (y.empty()) y = x;//y = x in default
@@ -103,9 +103,6 @@ string get(string var, string to="$t0") {//get var from mem to a reg
     if (var[0] == '$') return var;//if reg, return reg
     //saved in a reg
     SymEntry *entry = search_tab(var);
-    if (entry -> addr == uninit) {
-        break_point();
-    }
 //    if (entry->reg != "") return entry->reg;
 //    //const
 //    if (entry->iType==I_CONST) {
@@ -148,10 +145,6 @@ string remark(Quadruple quad) {
     return "   # "+ mid_out(quad);
 }
 
-string space() {
-    return to_string(space_for_var + 4*preserve_regs.size());
-}
-
 void insert_para(string id) {
     ids.push_back(id);
     addrs.push_back(fp_offset);
@@ -184,7 +177,6 @@ void print_mips() {
                 break;
             case ASSI:   save(quad.x, get(quad.y)); break;
             case PARA: {
-                mips << endl;
 //                lw("$s" + to_string(reg_no++), var_offset++ * 4, "$fp");
                 if (para_reg_no > max_para_reg) {
                     insert_para(quad.x);
@@ -212,18 +204,18 @@ void print_mips() {
                         push(preserve_regs[i]);
                         mips << endl;
                     }
-                    //TODO push S reg that may alter
-                    mips << "sub $fp, $sp, " + space() + "\n"//TODO $fp = $sp - space_for_variables
-                            "move $sp, $fp    # prolog\n";
+                    para_offset = search_tab(quad.y, true)->param.size()*4;
+                    mips << "sub $sp, $sp, " + to_string(space_for_var+para_offset)+ "\n"//TODO $fp = $sp - space_for_variables
+                            "move $fp, $sp    # prolog\n";
                 }
                 //is flow when compiling, so just need to increase
                 fp_offset=0;ids.clear();addrs.clear();
                 continue;
             case PUSH: {
-                mips << endl;
+//                mips << endl;
                 if (push_reg_no > max_para_reg) {//overflow
-                    mips << "sw "+get(quad.x)+", "+ to_string(para_offset-base_offset)+"($fp)";
-                    para_offset+=4;
+                    mips << "sw "+get(quad.x)+", "+ to_string(-base_offset)+"($sp)";
+//                    para_offset+=4;
                 } else mips << "move $a"+to_string(push_reg_no++)+", "+ get(quad.x);
                 break;
             }
@@ -232,18 +224,17 @@ void print_mips() {
             case COMP:  mips << "cmp " << quad.x << " " << quad.y; break;
             case RET:
                 if (stack_prepare) {
-                    if (quad.x != "NULL" and quad.x != "")mips << "move $v0, " + get(quad.x) + "\n\n";
-                    mips << "\naddi $fp, $fp, "+space()+"    # epilog\n"//TODO $fp = $sp + space_for_variables
-                            "move $sp, $fp\n";
+                    if (quad.x != "NULL" and quad.x != "")mips << "move $v0, " + get(quad.x) + "\n";
+                    mips << "addi $sp, $fp, "+to_string(space_for_var+para_offset)+"\n";
                     for (int i=0; i < preserve_regs.size(); i++) {
                         pop(preserve_regs[preserve_regs.size() - i - 1]);
                         mips << endl;
                     }
-                    mips << "jr $ra";
+                    mips << "jr $ra    # epilog\n";
                 }
 //                fp_now--;
 //                fp_offset.pop_back();
-                var_offset = 0; para_reg_no = 1; para_offset = 0;
+                var_offset = 0; para_reg_no = 1;
                 break;
             case IN:mips << "li $v0, 5\n"
                                 "syscall\n";
@@ -265,12 +256,12 @@ void print_mips() {
             case STR:
                 mips << quad.x+": .asciiz \"" <<  quad.y + "\"\n";
                 if (global_declaring and next.op != STR) mips << "\n.text\n"
-                                                                 "li $fp, 0x10040000\n"
-                                                    "move $sp, $fp\n\n";//init
+
+                                                    "move $fp, $sp\n\n";//init
                 continue;
             case CALL:
-                mips << "\njal func_" << quad.x;
-                var_offset = 0; push_reg_no = 1;para_offset = 0;
+                mips << "jal func_" << quad.x + "\n";
+                var_offset = 0; push_reg_no = 1;
                 break;
             case J:     mips << "J " << quad.x; break;
             case BZ:    mips << "bz " << quad.x << " " << quad.y<< " " << quad.z; break;
@@ -279,7 +270,7 @@ void print_mips() {
             case TAB:
                 preTab = tab_flow[pre_tab++];
 //                print_tab();
-                break;
+                continue;
             case PUSH_STACK:
                 push("$t1");break;
             case POP_STACK:
