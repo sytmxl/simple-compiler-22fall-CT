@@ -383,7 +383,7 @@ int Stmt() {
     peek_sym();
     set();
     if (classes[0] == IDENFR) {
-        LVal();
+        string lval = LVal();
         string name = sym;
         peek_sym();
         if (classes[0] == ASSIGN and g_entry->iType==I_CONST) error('h');
@@ -402,9 +402,16 @@ int Stmt() {
                 next_not_error(SEMICN);
                 add_quad(IN, name);
             } else {    //LVal '='@ Exp';'
+                vector<string> strs = split(lval, "#");
+                if (strs.size() > 1) add_quad(PUSH_STACK);//$t1 = offset, will be flushed by exp, so save it
                 string exp = Exp();
-                if (exp == "RET") add_quad(GETRET, name);
-                else add_quad(ASSI, name, exp);
+                if (exp == "RET") exp = "$v0";
+                if (strs.size() > 1) {//arr = exp
+                    add_quad(POP_STACK);
+                    add_quad(SAVEARR, strs[0], "$t0", exp);
+                } else {
+                    add_quad(ASSI, name, exp);
+                }
                 next_not_error(SEMICN);
             }
         }

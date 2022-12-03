@@ -388,7 +388,12 @@ void print_mips() {
                 SymEntry *arr = search_tab(quad.x, true);
                 if (quad.z != "$t1")
                     mips << "move $t1, "+get(quad.z) + "\n";
-                sw("$t1", arr->addr + to_int(quad.y), arr->global?"$gp":"$fp");
+                if (quad.y != "$t0") sw("$t1", arr->addr + to_int(quad.y), arr->global?"$gp":"$fp");
+                else {//from lval = exp
+                    mips << "add $t0, $t0, " << (arr->global?"$gp":"$fp") << "\n"
+                                                                             "add $t0, $t0, " + to_string(arr->addr)+
+                                                                             "\nsw $t1, ($t0)\n";
+                }
                 if (arr->global) gp_offset+=4;
                 else fp_offset+=4;
                 break;

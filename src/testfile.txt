@@ -1,46 +1,32 @@
-void print2 (int x[],int y[]) {
-    int i=0, j=0;
-    printf("test2:%d\n",x[1][0]);
-    printf("x2:\n");
-    i=0; j=0;
-                while (j < 4) {
-                    printf("%d ", x[j]);
-                    j=j+1;
-                }
-    i=0; j=0;
-            while (j < 4) {
-                printf("%d ", y[j]);
-                j=j+1;
-            }
-            printf("\n");
-}
-void print (int x[][4],int y[]) {
-    int i=0, j=0;
-    //printf("test1:%d\n",x[1][0]);
-    print2(x[1], y);
-
-    printf("y:\n");
-    i=0; j=0;
-        while (j < 4) {
-            printf("%d ", y[j]);
-            j=j+1;
-        }
-        printf("\n");
-
-}
-void p (int x, int y, int z) {
-    printf("para test: %d %d %d\n", x, y, z);
+int aa(int b[][3])
+{
+    int w;
+    w=b[0][0]+b[0][1]+b[0][2]+b[1][0]+b[1][1]+b[1][2];
+    return w;
 }
 int main()
 {
+    printf("19182650\n");
+    const int a[2][3]={{1,2,3},{4,5,6}};
+    int b[2][3]={{1,2,3},{4,5,6}};
+    int c[2][3];
+    int d;
+    d=aa(b);
+    c[0][0]=b[0][0];
+    c[0][1]=b[0][1];
+    c[0][2]=b[0][2];
+    c[1][0]=b[1][0];
+    c[1][1]=b[1][1];
+    c[1][2]=b[1][2];
+    printf("%d\n",a[0][0]);
+    printf("%d\n",a[0][1]);
+    printf("%d\n",a[0][2]);
+    printf("%d\n",a[1][0]);
+    printf("%d\n",a[1][1]);
+    printf("%d\n",a[1][2]);
+    printf("%d\n",d);
+    printf("%d\n",c[0][0]);
+    printf("%d\n",c[1][2]);
 
-int z;
-     int x[3][4] = {{1,3,4,2},{5,7,8,6}, {9,2,5,3}};
-     int y[3][4] = {{1,0,4,0},{5,7,8,6}, {9,2,5,3}};
-    printf("test0:%d\n",x[1][0]);
-    print(x, y[2]);
-    //p2(1,2);
-    //p(1,2,3);
-    //p(3,4,5);
     return 0;
 }
