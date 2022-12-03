@@ -2,7 +2,7 @@
 #include "phas.h"
 #include "err.h"
 #include "mid.h"
-
+#include "mips.h"
 int outside_str=0;//count exp number out of format string
 int loop_depth=0;
 int return_line_no=-1, printf_line_no=-1;
@@ -13,6 +13,12 @@ bool defining = false, //if check is duplicated
     cons = false;//if fully cal when defining const
 bool open_cal = true;
 bool push = true;
+vector<int> whiles;
+int if_counter = 1, while_counter = 1;
+bool is_arr = false;
+int arr_i = 0, arr_j = 0, arr_x = 0, arr_y = 0;
+string arr_name;
+
 
 void next_not_error(Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
 void Decl();
@@ -55,7 +61,7 @@ string RelExp();
 string LOrExp();
 
 string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
-
+string logic_loop(string (*func)(), void (*print_func)(), Symbol sym1=DEFAULT, Symbol sym2=DEFAULT, Symbol sym3=DEFAULT, Symbol sym4=DEFAULT);
 void print(string str);
 
 void AddExp_print();
@@ -64,6 +70,11 @@ void LAndExp_print();
 void EqExp_print();
 void RelExp_print();
 void LOrExp_print();
+
+string cal_offset(string name, int x, int y) {
+    SymEntry *entry = search_tab(name);
+    return to_string((y + x*entry->j)*4);
+}
 
 void print(string str) {
     if (setting) buffer.push_back("<" + str + ">");
@@ -141,7 +152,6 @@ void MainFuncDef() {
 }
 
 void ConstDecl() {
-    cons = true;
     next_not_error(CONSTTK);
     next_not_error(INTTK);
     ConstDef();
@@ -153,7 +163,6 @@ void ConstDecl() {
     }
     next_not_error(SEMICN);
     print("ConstDecl");
-    cons = false;
 }
 
 void ConstDef() {
@@ -164,25 +173,42 @@ void ConstDef() {
     string name = sym;
     int dim=0;
     peek_sym();
-    while (classes[0] == LBRACK) {
+    arr_i = arr_j = 1;//init
+    arr_x = arr_y = 0;
+    while (classes[0] == LBRACK) {//1 dim arr a[x]->a[1][x]
+        arr_name = name;
         next_sym();//at [
-        ConstExp();
+        is_arr = false;//exp here should not be arr init
+        if (arr_i == 1) arr_i = to_int(ConstExp());
+        else arr_j = to_int(ConstExp());
         next_not_error(RBRACK);
         dim++;
         peek_sym();
+        is_arr = true;//create a env for arr init
+    }
+    if (arr_j == 1) {//1 dim arr a[x]->a[1][x]
+        arr_j = arr_i;
+        arr_i = 1;
     }
     peek_sym();
     int value=uninit;
     if (classes[0] == ASSIGN) {
         next_sym();//at =
-        value= to_int(ConstInitVal());
-        add_quad(CON, name, to_string(value));
+        if (is_arr) {
+            add_quad(ARR, name, to_string(arr_i), to_string(arr_j));
+            ConstInitVal();
+        } else {
+            value = to_int(ConstInitVal());
+            add_quad(CON, name, to_string(value));
+        }
 //        add_quad(CON, name, "$t1");
-    } else add_quad(CON, name);
-    SymEntry entry(I_CONST, dim, value);
+    } else if (is_arr) add_quad(ARR, name, to_string(arr_i), to_string(arr_j));
+    else add_quad(CON, name);
+    SymEntry entry(I_CONST, dim, value, arr_i, arr_j);
     entry.global = global;
     insert_tab(name, entry);
     print("ConstDef");
+    is_arr = false;
 }
 
 void VarDecl() {
@@ -206,30 +232,47 @@ void VarDef() {
     string name = sym;
     int dim=0;
     peek_sym();
+    arr_i = arr_j = 1;//init
+    arr_x = arr_y = 0;
     while (classes[0] == LBRACK) {
+        arr_name = name;
         next_sym();//at [
-        ConstExp();
+        is_arr = false;
+        if (arr_i == 1) arr_i = to_int(ConstExp());
+        else arr_j = to_int(ConstExp());
         next_not_error(RBRACK);
         dim++;
         peek_sym();
+        is_arr = true;//create a env for arr init
+    }
+    if (arr_j == 1) {//1 dim arr a[x]->a[1][x]
+        arr_j = arr_i;
+        arr_i = 1;
     }
     peek_sym();
     int value=uninit;
     if (classes[0] == ASSIGN) {
         next_sym();//at =
-        value = to_int(InitVal());
-//        add_quad(VAR, name, InitVal());//TODO
-        add_quad(VAR, name, "$t1");
-    } else add_quad(VAR, name);
-    SymEntry entry(I_VAR, dim, value);
+        if (is_arr) {
+            add_quad(ARR, name, to_string(arr_i), to_string(arr_j));
+            InitVal();
+        } else {
+            value = to_int(InitVal());
+            add_quad(VAR, name, "$t1");
+        }
+//        add_quad(CON, name, "$t1");
+    } else if (is_arr) add_quad(ARR, name, to_string(arr_i), to_string(arr_j));
+    else add_quad(VAR, name);
+    SymEntry entry(I_VAR, dim, value, arr_i, arr_j);
     entry.global = global;
     insert_tab(name, entry);
     print("VarDef");
+    is_arr = false;
 }
 
 string ConstInitVal() {//almost same as InitVal
     peek_sym();
-    string ret;
+    string ret=to_string(uninit);
     if (classes[0] == LBRACE) {
         next_sym();//at {
         peek_sym();
@@ -292,18 +335,19 @@ int FuncFParam() {
     add_quad(PARA, name);
     if (classes[0] == LBRACK) { //'[' ']' { '[' ConstExp ']' }
         next_sym();//at [
-        next_not_error(RBRACK);//TODO array
+        next_not_error(RBRACK);
         dim++;
         peek_sym();
         while (classes[0] == LBRACK) {
             next_sym();
-            ConstExp();
+            arr_j = to_int(ConstExp());
             next_not_error(RBRACK);
             dim++;
             peek_sym();
         }
     }
-    SymEntry entry(I_VAR, dim);
+    SymEntry entry(I_PARA, dim, 0, arr_i, arr_j);
+
     insert_tab(name, entry);
     print("FuncFParam");
     return dim;
@@ -369,26 +413,44 @@ int Stmt() {
         if (classes[0] == SEMICN) {     //;
             next_sym();
         } else if (classes[0] == IFTK) {   //'if''('Cond')'Stmt['else'Stmt]
+            string n = to_string(if_counter++);
+            add_quad(LABEL, "if_"+n);
             next_sym();
             next_not_error(LPARENT);
             Cond();
+            add_quad(DIRECT, "blez $t1, end_if_"+n);//goto else or end_if
             next_not_error(RPARENT);
             Stmt();
             peek_sym();
             if (classes[0] == ELSETK) {
+                add_quad(DIRECT, "j end_else_"+n);
+                add_quad(LABEL, "end_if_"+n);
+                add_quad(LABEL, "else_"+n);
                 next_sym();//at else
                 Stmt();
-            }
+                add_quad(LABEL, "end_else_"+n);
+            } else add_quad(LABEL, "end_if_"+n);
+            add_quad(LABEL, "end_if_else_"+n);
         } else if (classes[0] == WHILETK) {   //'while''('Cond')'Stmt
+            int n = while_counter++;
+            whiles.push_back(n);
+            add_quad(LABEL, "while_"+to_string(n));
             next_sym();//at while
             next_not_error(LPARENT);
             Cond();
+            add_quad(DIRECT, "blez $t1, end_while_"+to_string(n));
             next_not_error(RPARENT);
             loop_depth++;
             Stmt();
             loop_depth--;
+            add_quad(DIRECT, "j while_"+to_string(n));
+            add_quad(LABEL, "end_while_"+to_string(n));
+            whiles.pop_back();
         } else if (classes[0] == BREAKTK) {   //'break'';'
             next_sym();
+            int n = whiles.back();
+//            whiles.pop_back();
+            add_quad(DIRECT, "j end_while_"+to_string(n));
             if (loop_depth<=0) error('m');
             next_not_error(SEMICN);
         } else if (classes[0] == RETURNTK) {   //'return'[Exp]';'
@@ -407,38 +469,32 @@ int Stmt() {
             peek_sym();
             outside_str=0;
             int i = 0;
-            while (i < strs.size()) {//print str before %d
-                string str = strs[i];
-                if (str == "#") add_quad(OUT, "str0");//\n
-                else if (str == "$") break;
-                else add_quad(OUT, new_str(str));
-                i++;
-            }
             while (classes[0] == COMMA) {
                 next_sym();//at ,
-                while (i < strs.size()) {//print str before %d
-                    string str = strs[i++];
-                    if (str == "#") add_quad(OUT, "str0");//\n
-                    else if (str == "$") break;
-                    else add_quad(OUT, new_str(str));
-                }
                 Exp();
-                add_quad(OUT, "$t1");
+                add_quad(PUSH_STACK);
                 outside_str++;
                 peek_sym();
             }
-            while (i < strs.size()) {//print str before %d
-                string str = strs[i];
+            int dig=outside_str-1;
+            while (i < strs.size()) {
+                string str = strs[i++];
                 if (str == "#") add_quad(OUT, "str0");//\n
-                else if (str == "$") break;
+                else if (str == "$") {
+                    add_quad(DIRECT, "lw $t1, "+ to_string(dig--*4) + "($sp)");
+                    add_quad(OUT, "$t1");
+                }
                 else add_quad(OUT, new_str(str));
-                i++;
             }
+            add_quad(DIRECT, "addi $sp,$sp,"+ to_string(4*outside_str));
             if (inside_str != outside_str) error('l', printf_line_no);
             next_not_error(RPARENT);
             next_not_error(SEMICN);
         } else if (classes[0] == CONTINUETK) {   //'continue'';'
             next_sym();
+            int n = whiles.back();
+//            whiles.pop_back();
+            add_quad(DIRECT, "j while_"+to_string(n));
             if (loop_depth<=0) error('m');
             next_not_error(SEMICN);
         } else if (classes[0] == LBRACE) Block();   //block
@@ -457,15 +513,47 @@ string LVal() {//Ident{'['Exp']'}
 //    int dim=0;
     string ret = sym;
     g_entry = search_tab(sym);
+    SymEntry *entry = search_tab(sym);
 //    if(!defining) if (g_entry->iType==I_NULL) error('c');
-
     peek_sym();
-    while (classes[0] == LBRACK) {
-        next_sym();
-        Exp();
+    int i=0;
+//    if (classes[0] == LBRACK) ret = "&" + ret;
+    if (classes[0] == LBRACK) {//arr
+        while (classes[0] == LBRACK) {//save
+            next_sym();
+            Exp();
+            add_quad(PUSH_STACK);
+            i++;
 //        dim++;
-        next_not_error(RBRACK);
-        peek_sym();
+            next_not_error(RBRACK);
+            peek_sym();
+        }
+        //cal offset
+        if (i == 2) {//a[i][j]
+            add_quad(POP_STACK);
+            add_quad(POP_STACK);//$t1 = y
+            add_quad(_MUL, "$t0", to_string(entry->j), "$t0");//x*j
+            add_quad(_ADD, "$t0", "$t1", "$t1");
+            add_quad(_MUL, "$t1", to_string(4), "$t1");
+        } else {//a[i]
+            if (i < entry->dim) {//y[0] of y[1][2]
+                add_quad(POP_STACK);//$t1=$t0=x
+                add_quad(_MUL, "$t0", to_string(entry->j), "$t1");//x*j
+                add_quad(_MUL, "$t1", to_string(4), "$t1");
+            } else {
+                add_quad(POP_STACK);//$t1=$t0=x
+                add_quad(_MUL, "$t1", to_string(4), "$t1");
+            }
+        }
+        //tell addr or value
+        if (i < entry->dim) {//addr
+            ret += "'$t1";
+        } else {//value
+            ret += "#$t1";
+        }
+    } else if (i < entry->dim) {
+        add_quad(DIRECT, "move $t1, $0");
+        ret += "'$t1";
     }
     if (cons) ret = to_string(to_int(ret));
     print("LVal");
@@ -494,11 +582,14 @@ vector<int> FuncRParams() {
         add_quad(PUSH_STACK);
         peek_sym();
     }
+    int num=i-1;
     for(int j =0;j<i;j++) {
-        add_quad(POP_STACK);
-        add_quad(PUSH, "$t0");
+//        add_quad(POP_STACK);
+        add_quad(DIRECT, "lw $t0, "+ to_string(num--*4) + "($sp)");
+        add_quad(DIRECT, "sw $t0, "+ to_string(4*i-(base_offset-j*4)) + "($sp)");
 //        add_quad(PUSH, "$s"+to_string(j));
     }
+    add_quad(DIRECT, "addi $sp,$sp,"+ to_string(4*i));
     print("FuncRParams");
     return param;
 }
@@ -535,24 +626,28 @@ string UnaryExp() {
     } else if (classes[0] == PLUS || classes[0] == MINU || classes[0] == NOT) {
         UnaryOp();
         push = false;
-        if (cons) {
-            if (cla == MINU) ret= "-";
-            ret += UnaryExp();
-            if (ret[0] == '-' and ret[1] == '-') {
-                string temp;
-                for (int i = 2; i < ret.size(); i++) temp += ret[i];
-                ret = temp;
-            }
+        if (cla == NOT) {
+            UnaryExp();
+            add_quad(_EQL, "$t1", "0", "$t1");
+            ret = "$t1";
         } else {
-            if (cla == MINU) {
-                ret = new_temp_var();
-                add_quad(_SUB, "0", UnaryExp(), ret);
-            } else ret = UnaryExp();
+            if (cons) {
+                if (cla == MINU) ret = "-";
+                ret += UnaryExp();
+                if (ret[0] == '-' and ret[1] == '-') {
+                    string temp;
+                    for (int i = 2; i < ret.size(); i++) temp += ret[i];
+                    ret = temp;
+                }
+            } else {
+                if (cla == MINU) {
+                    ret = new_temp_var();
+                    add_quad(_SUB, "0", UnaryExp(), ret);
+                } else ret = UnaryExp();
+            }
         }
     } else ret = PrimaryExp();
-    if (!cons) {
-        add_quad(ASSI, "$t1", ret);
-    }
+    if (!cons and ret != "$t1") add_quad(ASSI, "$t1", ret);
     print("UnaryExp");
     return ret;
 }
@@ -560,16 +655,16 @@ string UnaryExp() {
 string PrimaryExp() {
     peek_sym();
 //    int dim=0;
-    string dim;
-    if (classes[0] == IDENFR) dim = LVal();
+    string ret;
+    if (classes[0] == IDENFR) ret = LVal();
     else if (classes[0] == LPARENT) {
         next_sym();
-        dim = Exp();
+        ret = Exp();
         next_not_error(RPARENT);
-    } else if (classes[0] == INTCON) dim = Number();
+    } else if (classes[0] == INTCON) ret = Number();
     else error();
     print("PrimaryExp");
-    return dim;
+    return ret;
 }
 
 string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2, Symbol sym3, Symbol sym4) {
@@ -610,6 +705,7 @@ string exp_loop(string (*func)(), void (*print_func)(), Symbol sym1, Symbol sym2
     if (!cons) ret = "$t1";//return digit only at const def
     return ret;
 }
+
 //exp_loop
 string LOrExp() {
     return exp_loop(LAndExp, LOrExp_print, OR);
@@ -646,9 +742,33 @@ void MulExp_print() {print("MulExp");}
 string Exp() {
 //    int dim = AddExp();
     string name = AddExp();
+    if (is_arr) {
+        add_quad(SAVEARR, arr_name, to_string((arr_y+arr_x*arr_j)*4), "$t1");
+        arr_y++;
+        if (arr_i != 1 and arr_y > arr_j-1) {
+            arr_y = 0;
+            arr_x++;
+        }
+    }
     print("Exp");
     return name;
 //    return dim;
+}
+
+string ConstExp() {
+    cons = true;
+    string ret = AddExp();
+    if (is_arr) {
+        add_quad(SAVEARR, arr_name, to_string((arr_y+arr_x*arr_j)*4), ret);
+        arr_y++;
+        if (arr_i != 1 and arr_y > arr_j-1) {//if 2 dim arr
+            arr_y = 0;
+            arr_x++;
+        }
+    }
+    print("ConstExp");
+    cons = false;
+    return ret;
 }
 
 void Cond() {
@@ -685,8 +805,4 @@ void Ident() {//terminal
     if (sym.compare("ok") == 0) print_tab();
 }
 
-string ConstExp() {
-    string ret = AddExp();
-    print("ConstExp");
-    return ret;
-}
+

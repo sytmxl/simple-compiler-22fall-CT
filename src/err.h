@@ -10,6 +10,7 @@ enum IType {
     I_CONST,
     I_STR,
     I_TEMP,
+    I_PARA,
 };
 
 enum DType {
@@ -30,6 +31,8 @@ typedef struct SymEntry {
     int value = -1365681;
     int addr = -1365681;
     string reg="";
+    int i = 0;
+    int j = 0;
     bool global= false;
 //    vector<Var> param;
     vector<int> param;//dim of parameters(as only int)
@@ -40,10 +43,11 @@ typedef struct SymEntry {
             : iType(iType1), dim(dim1){}
     SymEntry(IType iType1, int dim1, int value1)
             : iType(iType1), dim(dim1), value(value1){}
-    SymEntry(IType iType1, int dim1, int value1, int addr1)
-            : iType(iType1), dim(dim1), value(value1), addr(addr1){}
-    SymEntry()= default;
+    SymEntry(IType iType1, int dim1, int value1, int i1, int j1): iType(iType1), dim(dim1), i(i1), j(j1), value(value1){};
     SymEntry(IType iType1): iType(iType1){};
+    SymEntry(IType iType1, int dim1, int value1, int addr1)
+            : iType(iType1), dim(dim1), value(value1), addr(addr1){};
+    SymEntry()= default;
 }SymEntry;
 
 typedef struct Tab {

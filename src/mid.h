@@ -1,14 +1,16 @@
 #include "sym.h"
 #include "err.h"
 enum Op {
-    DEF,ASSI,
+    DEF,ASSI,DIRECT,
     FUNC, PARA, VAR, CON,
     _ADD, _SUB, _MUL, _DIV, _MOD,
+    _AND, _OR, _EQL, _NEQ, _LSS, _LEQ, _GRE, _GEQ,
     PUSH, CALL, RET, GETRET,
     IN, OUT, STR,
     COMP, LABEL, J,
     BEQ, BNE, BZ, BNZ,
-    TAB, PUSH_STACK, POP_STACK,PUSH_GP,POP_GP
+    TAB, PUSH_STACK, POP_STACK,PUSH_GP,POP_GP,
+    ARR, GETARR, SAVEARR,
 };
 
 typedef struct Quadruple {

@@ -1,6 +1,7 @@
 #include "err.h"
 #include "mips.h"
 #include <map>
+#include "mid.h"
 //TODO more info showed when error occurs
 //"int ok" trigger print_tab
 bool debug = true;

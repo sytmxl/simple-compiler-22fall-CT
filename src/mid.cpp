@@ -12,6 +12,14 @@ Op sym2op(Symbol sym) {
         case MULT: return _MUL;
         case DIV: return _DIV;
         case MOD: return _MOD;
+        case AND: return _AND;
+        case OR: return _OR;
+        case EQL: return _EQL;
+        case NEQ: return _NEQ;
+        case LSS: return _LSS;
+        case LEQ: return _LEQ;
+        case GRE: return _GRE;
+        case GEQ: return _GEQ;
         default: return DEF;
     }
 }
@@ -28,6 +36,14 @@ string mid_out(Quadruple quad) {
         case _DIV:   ret =  quad.z + " = " + quad.x + " / " + quad.y; break;
         case _MUL:   ret =  quad.z + " = " + quad.x + " * " + quad.y; break;
         case _MOD:   ret =  quad.z + " = " + quad.x + " % " + quad.y; break;
+        case _AND:   ret =  quad.z + " = " + quad.x + " and " + quad.y; break;
+        case _OR:    ret =  quad.z + " = " + quad.x + " or " + quad.y; break;
+        case _EQL: ret =  quad.z + " = " + quad.x + " == " + quad.y; break;
+        case _NEQ: ret =  quad.z + " = " + quad.x + " != " + quad.y; break;
+        case _LSS: ret =  quad.z + " = " + quad.x + " < " + quad.y; break;
+        case _LEQ: ret =  quad.z + " = " + quad.x + " <= " + quad.y; break;
+        case _GRE: ret =  quad.z + " = " + quad.x + " > " + quad.y; break;
+        case _GEQ: ret =  quad.z + " = " + quad.x + " >= " + quad.y; break;
         case ASSI:  ret =  quad.x + " = " + quad.y; break;
         case PARA:  ret =  "para " + quad.x; break;
         case FUNC:  ret =  "\n" + quad.x + " " + quad.y + "()"; break;
@@ -57,6 +73,10 @@ string mid_out(Quadruple quad) {
         case POP_STACK: ret = "pop stack";break;
         case PUSH_GP: ret = "push gp";break;
         case POP_GP: ret = "pop gp";break;
+        case DIRECT: ret = quad.x;break;
+        case ARR: ret = "int " + quad.x +"["+quad.y+"]"+"["+quad.z+"]";break;
+        case GETARR: ret = quad.z +" = "+quad.x +"("+quad.y+")";break;
+        case SAVEARR: ret = quad.x +"("+quad.y+")"+" = "+quad.z;break;
         default:    cout << "UNKNOWN";
     }
     return ret + "\n";
