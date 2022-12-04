@@ -101,8 +101,8 @@ string get(string var, string to="$t0") {//get var from mem to a reg
     if (strs.size() > 1) {
         //$t1=offset
         string arr = strs[0];
-        SymEntry *entry = search_tab(arr, true);
-        print_tab();
+        SymEntry *entry = search_tab(arr);
+//        if (entry->iType == I_NULL) cout << arr +" not found\n";
         if (to == "$t0") to = t();
         if (entry->iType == I_PARA and entry->dim > 0)//para refer
             mips << "add $t1, $t1, "+ get(arr)<< endl;
@@ -118,7 +118,7 @@ string get(string var, string to="$t0") {//get var from mem to a reg
         //$t1=offset
         string arr = strs[0];
         SymEntry *entry = search_tab(arr, true);
-        print_tab();
+//        print_tab();
         if (to == "$t0") to = t();
         if (entry->iType != I_PARA) {//first time
             mips << "addi $t1, $t1, " + to_string(entry->addr) << endl;
@@ -126,8 +126,8 @@ string get(string var, string to="$t0") {//get var from mem to a reg
         else
             mips << "add $t1, $t1, "+ get(arr)<< endl;
         if (entry->global) {//all turned to fp-based
-            mips << "add $t1, $t1, "<<"$fp"<< endl;
-            mips << "sub $t1, $t1, "<<"$gp"<< endl;
+            mips << "sub $t1, $t1, "<<"$fp"<< endl;
+            mips << "add $t1, $t1, "<<"$gp"<< endl;
         }
 //        mips << "addi $t1, $t1, "+ to_string(base_offset)<< endl;//fp's coming shift
 //        lw(to, 0, "$t1");
@@ -216,8 +216,12 @@ void print_mips() {
                 mips << "div " + get(quad.x)+", " + get(quad.y)+"\n";
                 mips << "mfhi " + get(quad.z);
                 break;
-            case _AND:   mips << "and " + get(quad.z)+", " + get(quad.x)+", " + get(quad.y); break;
-            case _OR:    mips << "or " + get(quad.z)+", " + get(quad.x)+", " + get(quad.y); break;
+            case _AND:   mips << "move $t0, " + get(quad.x) +
+                                 "\nmove $t1, " + get(quad.y) +
+                                 "\njal and"; break;
+            case _OR:    mips << "move $t0, " + get(quad.x) +
+                                 "\nmove $t1, " + get(quad.y) +
+                                 "\njal or"; break;
             case _EQL: mips << "move $t0, " + get(quad.x) +
                                "\nmove $t1, " + get(quad.y) +
                                "\njal eql"; break;
@@ -280,6 +284,14 @@ void print_mips() {
                                     "j false\n"
                                     "neq:\n"
                                     "bne $t0, $t1, true\n"
+                                    "j false\n"
+                                    "and:\n"
+                                    "beqz $t0, false\n"
+                                    "beqz $t1, false\n"
+                                    "j true\n"
+                                    "or:\n"
+                                    "bnez $t0, true\n"
+                                    "bnez $t1, true\n"
                                     "j false";//init
                     done = true;
                 }
@@ -371,9 +383,11 @@ void print_mips() {
                 SymEntry *arr = search_tab(quad.x, true);
                 if (arr->global) {
                     arr->addr = gp_offset;
+                    mips << "# gp "+ to_string(gp_offset);
                     gp_offset += 4 * arr->i * arr->j;
                 } else {//local arr
                     arr->addr = fp_offset;
+                    mips << "# fp "+ to_string(fp_offset);
                     fp_offset += 4 * arr->i * arr->j;
                 }
                 break;
@@ -390,9 +404,12 @@ void print_mips() {
                     mips << "move $t1, "+get(quad.z) + "\n";
                 if (quad.y != "$t0") sw("$t1", arr->addr + to_int(quad.y), arr->global?"$gp":"$fp");
                 else {//from lval = exp
-                    mips << "add $t0, $t0, " << (arr->global?"$gp":"$fp") << "\n"
-                                                                             "add $t0, $t0, " + to_string(arr->addr)+
-                                                                             "\nsw $t1, ($t0)\n";
+                    mips << "add $t0, $t0, " << (arr->global?"$gp":"$fp") << "\n";
+                    if (arr->iType == I_PARA)//refer
+                        mips << "add $t0, $t0, " + get(quad.x) + "\n";
+                    else
+                        mips << "add $t0, $t0, " + to_string(arr->addr) + "\n";
+                    mips << "sw $t1, ($t0)\n";
                 }
                 if (arr->global) gp_offset+=4;
                 else fp_offset+=4;

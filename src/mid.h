@@ -10,7 +10,7 @@ enum Op {
     COMP, LABEL, J,
     BEQ, BNE, BZ, BNZ,
     TAB, PUSH_STACK, POP_STACK,PUSH_GP,POP_GP,
-    ARR, GETARR, SAVEARR,
+    ARR, GETARR, SAVEARR
 };
 
 typedef struct Quadruple {

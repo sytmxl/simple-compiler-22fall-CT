@@ -95,6 +95,8 @@ int main() {
         printf("\n");
     }
     print(x, y[2]);
+    if(-1 && -1) printf("-1\n");
+
     return 0;
 }
 
