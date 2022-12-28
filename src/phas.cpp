@@ -501,7 +501,7 @@ int Stmt() {
                 }
                 else add_quad(OUT, new_str(str));
             }
-            add_quad(DIRECT, "addi $sp,$sp,"+ to_string(4*outside_str));
+            add_quad(DIRECT, "addi $sp,$sp, "+ to_string(4*outside_str));
             if (inside_str != outside_str) error('l', printf_line_no);
             next_not_error(RPARENT);
             next_not_error(SEMICN);
@@ -617,7 +617,7 @@ vector<int> FuncRParams() {
         add_quad(DIRECT, "sw $t0, "+ to_string(4*i-(base_offset-j*4)) + "($sp)");
 //        add_quad(PUSH, "$s"+to_string(j));
     }
-    add_quad(DIRECT, "addi $sp,$sp,"+ to_string(4*i));
+    add_quad(DIRECT, "addi $sp,$sp, "+ to_string(4*i));
     print("FuncRParams");
     return param;
 }

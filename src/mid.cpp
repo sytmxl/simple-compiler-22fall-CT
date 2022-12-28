@@ -5,6 +5,7 @@ vector<Quadruple> quads;
 ofstream mid("mid.txt");
 int t_reg_mid=0, str_no=1;//str0="\n"
 int uninit = -1365681;
+int push_count=0;
 Op sym2op(Symbol sym) {
     switch (sym) {
         case PLUS: return _ADD;
@@ -29,61 +30,73 @@ void add_quad(Op op, string x, string y, string z) {
 }
 
 string mid_out(Quadruple quad) {
-    string ret;
+    string ret= "";
+    for (int i = 0; i < push_count; ++i) {
+        ret += " ";
+    }
     switch (quad.op) {
-        case _ADD:   ret =  quad.z + " = " + quad.x + " + " + quad.y; break;
-        case _SUB:   ret =  quad.z + " = " + quad.x + " - " + quad.y; break;
-        case _DIV:   ret =  quad.z + " = " + quad.x + " / " + quad.y; break;
-        case _MUL:   ret =  quad.z + " = " + quad.x + " * " + quad.y; break;
-        case _MOD:   ret =  quad.z + " = " + quad.x + " % " + quad.y; break;
-        case _AND:   ret =  quad.z + " = " + quad.x + " and " + quad.y; break;
-        case _OR:    ret =  quad.z + " = " + quad.x + " or " + quad.y; break;
-        case _EQL: ret =  quad.z + " = " + quad.x + " == " + quad.y; break;
-        case _NEQ: ret =  quad.z + " = " + quad.x + " != " + quad.y; break;
-        case _LSS: ret =  quad.z + " = " + quad.x + " < " + quad.y; break;
-        case _LEQ: ret =  quad.z + " = " + quad.x + " <= " + quad.y; break;
-        case _GRE: ret =  quad.z + " = " + quad.x + " > " + quad.y; break;
-        case _GEQ: ret =  quad.z + " = " + quad.x + " >= " + quad.y; break;
-        case ASSI:  ret =  quad.x + " = " + quad.y; break;
-        case PARA:  ret =  "para " + quad.x; break;
-        case FUNC:  ret =  "\n" + quad.x + " " + quad.y + "()"; break;
-        case PUSH:  ret =  "push " + quad.x; break;
+        case _ADD:   ret += quad.z + " = " + quad.x + " + " + quad.y; break;
+        case _SUB:   ret += quad.z + " = " + quad.x + " - " + quad.y; break;
+        case _DIV:   ret += quad.z + " = " + quad.x + " / " + quad.y; break;
+        case _MUL:   ret += quad.z + " = " + quad.x + " * " + quad.y; break;
+        case _MOD:   ret += quad.z + " = " + quad.x + " % " + quad.y; break;
+        case _AND:   ret += quad.z + " = " + quad.x + " and " + quad.y; break;
+        case _OR:    ret += quad.z + " = " + quad.x + " or " + quad.y; break;
+        case _EQL: ret += quad.z + " = " + quad.x + " == " + quad.y; break;
+        case _NEQ: ret += quad.z + " = " + quad.x + " != " + quad.y; break;
+        case _LSS: ret += quad.z + " = " + quad.x + " < " + quad.y; break;
+        case _LEQ: ret += quad.z + " = " + quad.x + " <= " + quad.y; break;
+        case _GRE: ret += quad.z + " = " + quad.x + " > " + quad.y; break;
+        case _GEQ: ret += quad.z + " = " + quad.x + " >= " + quad.y; break;
+        case ASSI:  ret += quad.x + " = " + quad.y; break;
+        case PARA:  ret += "para " + quad.x; break;
+        case FUNC:  ret += "\n" + quad.x + " " + quad.y + "()"; break;
+        case PUSH:  ret += "push " + quad.x; break;
         case VAR:
-            ret =  "var int " + quad.x;
+            ret += "var int " + quad.x;
             if (quad.y != "NULL") ret += " = " + quad.y;
             break;
         case CON:
-            ret =  "const int " + quad.x;
+            ret += "const int " + quad.x;
             if (quad.y != "NULL") ret += " = " + quad.y;
             break;
-        case COMP:  ret =  "cmp " + quad.x + " " + quad.y; break;
-        case RET:   ret =  "ret " + quad.x; break;
-        case GETRET:ret =  quad.x + " = RET"; break;
-        case OUT:   ret =  "printf " + quad.x+"\n"; break;
-        case STR:   ret =  "const str " + quad.x + " = \"" + quad.y + "\""; break;
-        case CALL:  ret =  "CALL " + quad.x; break;
-        case J:     ret =  "J " + quad.x; break;
-        case IN:    ret =  quad.x + " = getint()"; break;
-        case BZ:    ret =  "bz " + quad.x + " " + quad.y+ " " + quad.z; break;
-        case BNZ:   ret =  "bnz " + quad.x + " " + quad.y+ " " + quad.z; break;
-        case LABEL: ret =  "label " + quad.x; break;
-        case TAB: ret =  "tab";break;
-        case DEF:ret =  "DEF";break;
-        case PUSH_STACK: ret = "push stack";break;
-        case POP_STACK: ret = "pop stack";break;
-        case PUSH_GP: ret = "push gp";break;
-        case POP_GP: ret = "pop gp";break;
-        case DIRECT: ret = quad.x;break;
-        case ARR: ret = "int " + quad.x +"["+quad.y+"]"+"["+quad.z+"]";break;
-        case GETARR: ret = quad.z +" = "+quad.x +"("+quad.y+")";break;
-        case SAVEARR: ret = quad.x +"("+quad.y+")"+" = "+quad.z;break;
+        case COMP:  ret += "cmp " + quad.x + " " + quad.y; break;
+        case RET:   ret += "ret " + quad.x; break;
+        case GETRET:ret += quad.x + " = RET"; break;
+        case OUT:   ret += "printf " + quad.x+"\n"; break;
+        case STR:   ret += "const str " + quad.x + " = \"" + quad.y + "\""; break;
+        case CALL:  ret += "CALL " + quad.x; break;
+        case J:     ret += "J " + quad.x; break;
+        case IN:    ret += quad.x + " = getint()"; break;
+        case BZ:    ret += "bz " + quad.x + " " + quad.y+ " " + quad.z; break;
+        case BNZ:   ret += "bnz " + quad.x + " " + quad.y+ " " + quad.z; break;
+        case LABEL: ret += "label " + quad.x; break;
+        case TAB: ret += "tab";break;
+        case DEF:ret += "DEF";break;
+        case PUSH_STACK: ret +="push stack";push_count++;break;
+        case POP_STACK: ret +="pop stack";push_count--;break;
+        case PUSH_GP: ret +="push gp";break;
+        case POP_GP: ret +="pop gp";break;
+        case DIRECT:
+            ret +=quad.x;
+            if (split(quad.x, " ")[0] == "addi" and split(quad.x, " ")[1] == "$sp,$sp,")
+                push_count -= to_int(split(quad.x, " ")[2])/4;
+            break;
+        case ARR: ret +="int " + quad.x +"["+quad.y+"]"+"["+quad.z+"]";break;
+        case GETARR: ret +=quad.z +" = "+quad.x +"("+quad.y+")";break;
+        case SAVEARR: ret +=quad.x +"("+quad.y+")"+" = "+quad.z;break;
         default:    cout << "UNKNOWN";
     }
     return ret + "\n";
 }
 
 void print_quad() {
-    for (Quadruple quad : quads) mid << mid_out(quad);
+    string str;
+    for (Quadruple quad : quads) {
+        str = mid_out(quad);
+        if (split(str, " ")[0] != "tab\n")
+            mid << str;
+    }
 }
 
 string new_temp_var() {
@@ -127,7 +140,7 @@ int is_digit(string str) {
 int to_int(string str) {//return int. if not int, return uninit
     //digit
     if(is_digit(str)!=uninit) return is_digit(str);
-    //const
+        //const
     else return search_tab(str)->value;
 }
 
